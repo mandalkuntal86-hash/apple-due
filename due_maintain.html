@@ -1641,7 +1641,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 
       <!-- Transaction Payment -->
       <div class="box" style="margin-bottom:18px">
-        <div class="box-head"><span>💳</span><div class="box-title">Transaction Payment — Received from Party</div></div>
+        <div class="box-head"><span>💳</span><div class="box-title">Payment — Received from Party</div></div>
         <div class="box-body">
           <p style="font-size:.78rem;color:var(--gray-500);margin-bottom:14px;font-family:var(--mono)">Record the actual CC transaction amount received/settled from party.</p>
           <div class="fg">
@@ -1654,8 +1654,8 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
           <div id="ccTxnPayStrip" style="display:none;margin-top:14px;background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:10px;padding:14px 16px">
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
               <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Total Txn Amount</div><div style="font-weight:800;font-family:var(--mono);color:var(--blue-800)" id="ccTxnPayStripTotal">—</div></div>
-              <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Txn Paid So Far</div><div style="font-weight:800;font-family:var(--mono);color:var(--green)" id="ccTxnPayStripPaid">—</div></div>
-              <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Txn Balance Due</div><div style="font-weight:800;font-family:var(--mono);color:var(--red)" id="ccTxnPayStripBal">—</div></div>
+              <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Payment So Far</div><div style="font-weight:800;font-family:var(--mono);color:var(--green)" id="ccTxnPayStripPaid">—</div></div>
+              <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Balance Due</div><div style="font-weight:800;font-family:var(--mono);color:var(--red)" id="ccTxnPayStripBal">—</div></div>
             </div>
           </div>
           <div class="f-actions" style="margin-top:14px">
@@ -1765,7 +1765,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
       <div class="tbl-card">
         <div style="overflow-x:auto">
           <table>
-            <thead><tr><th>Party</th><th>Txns</th><th>Txn Amt</th><th>Txn Rcvd</th><th>Txn Bal</th><th>Comm%</th><th>Comm</th><th>Comm Paid</th><th>Comm Bal</th><th>Status</th></tr></thead>
+            <thead><tr><th>Party</th><th>Txns</th><th>Txn Amt</th><th>Payment</th><th>Due</th><th>Comm%</th><th>Comm</th><th>Comm Paid</th><th>Comm Bal</th><th>Status</th></tr></thead>
             <tbody id="ccSumBody"></tbody>
             <tfoot id="ccSumFoot"></tfoot>
           </table>
@@ -3948,9 +3948,9 @@ function renderCCDash() {
     </div>
     <div class="s-card">
       <div class="s-icon">💰</div>
-      <div class="s-label">Txn Received</div>
+      <div class="s-label">Payment</div>
       <div class="s-value" style="font-size:1.5rem;color:var(--blue-600)">${fmt(totTxnPaid)}</div>
-      <div class="s-sub">Bal: ${fmt(totTxn-totTxnPaid)}</div>
+      <div class="s-sub">received from party</div>
       <div class="s-card-bg" style="background:var(--blue-600)"></div>
     </div>
     <div class="s-card">
@@ -3961,10 +3961,17 @@ function renderCCDash() {
       <div class="s-card-bg" style="background:var(--green)"></div>
     </div>
     <div class="s-card">
+      <div class="s-icon">📋</div>
+      <div class="s-label">Due (Txn − Payment)</div>
+      <div class="s-value" style="font-size:1.5rem;color:${(totTxn-totTxnPaid)>0?'var(--red)':'var(--green)'}">${fmt(totTxn-totTxnPaid)}</div>
+      <div class="s-sub">${(totTxn-totTxnPaid)<=0?'✅ Fully received':'txn balance pending'}</div>
+      <div class="s-card-bg" style="background:var(--blue-700)"></div>
+    </div>
+    <div class="s-card">
       <div class="s-icon">⚖️</div>
-      <div class="s-label">Balance Due</div>
+      <div class="s-label">Comm Due</div>
       <div class="s-value" style="font-size:1.5rem;color:${totBal>0?'var(--red)':'var(--green)'}">${fmt(totBal)}</div>
-      <div class="s-sub">${totBal<=0?'✅ All settled':'pending commission'}</div>
+      <div class="s-sub">${totBal<=0?'✅ All settled':'commission pending'}</div>
       <div class="s-card-bg" style="background:var(--red)"></div>
     </div>
   `;
@@ -4305,7 +4312,7 @@ function renderCCCommission() {
   cards.innerHTML=`
     <div class="mr-card"><div class="mr-card-label">Total Transactions</div><div class="mr-card-val" style="color:var(--blue-800)">${fmt(totTxn)}</div><div class="mr-card-sub">${list.length} txns</div></div>
     <div class="mr-card"><div class="mr-card-label">Total Commission</div><div class="mr-card-val" style="color:var(--orange)">${fmt(totComm)}</div></div>
-    <div class="mr-card"><div class="mr-card-label">Txn Received</div><div class="mr-card-val" style="color:var(--blue-600)">${fmt(totTxnPaid)}</div><div class="mr-card-sub">Txn bal: ${fmt(totTxn-totTxnPaid)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Payment</div><div class="mr-card-val" style="color:var(--blue-600)">${fmt(totTxnPaid)}</div><div class="mr-card-sub">Txn bal: ${fmt(totTxn-totTxnPaid)}</div></div>
     <div class="mr-card"><div class="mr-card-label">Comm Paid</div><div class="mr-card-val" style="color:var(--green)">${fmt(totCommPaid)}</div><div class="mr-card-sub">Comm bal: ${fmt(totComm-totCommPaid)}</div></div>
   `;
 
@@ -4351,7 +4358,7 @@ function renderCCLedger() {
   const s=ccPartyStats(party,from,to);
   document.getElementById('ccLedgerCards').innerHTML=`
     <div class="mr-card"><div class="mr-card-label">Total Txn Amount</div><div class="mr-card-val" style="color:var(--blue-800)">${fmt(s.totTxn)}</div><div class="mr-card-sub">${s.txns.length} transactions</div></div>
-    <div class="mr-card"><div class="mr-card-label">Txn Received</div><div class="mr-card-val" style="color:var(--blue-600)">${fmt(s.totTxnPaid)}</div><div class="mr-card-sub ${s.txnBal>0?'':''}">Bal: ${fmt(s.txnBal)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Payment</div><div class="mr-card-val" style="color:var(--blue-600)">${fmt(s.totTxnPaid)}</div><div class="mr-card-sub ${s.txnBal>0?'':''}">Bal: ${fmt(s.txnBal)}</div></div>
     <div class="mr-card"><div class="mr-card-label">Commission (${s.pct}%)</div><div class="mr-card-val" style="color:var(--orange)">${fmt(s.totComm)}</div></div>
     <div class="mr-card"><div class="mr-card-label">Comm Paid</div><div class="mr-card-val" style="color:var(--green)">${fmt(s.totCommPaid)}</div><div class="mr-card-sub" style="color:${s.commBal>0?'var(--red)':'var(--green)'}">Bal: ${fmt(s.commBal)}</div></div>
   `;
@@ -4432,11 +4439,15 @@ function renderCCSummary() {
     return {p,s};
   }).filter(r=>r.s.txns.length>0||r.s.txnPays.length>0||r.s.commPays.length>0);
 
+  const grandTxnDue = grandTxn - grandTxnPaid;
+  const grandCommDue = grandComm - grandCommPaid;
   document.getElementById('ccSumCards').innerHTML=`
     <div class="mr-card"><div class="mr-card-label">Total Txn Volume</div><div class="mr-card-val" style="color:var(--blue-800)">${fmt(grandTxn)}</div></div>
-    <div class="mr-card"><div class="mr-card-label">Txn Received</div><div class="mr-card-val" style="color:var(--blue-600)">${fmt(grandTxnPaid)}</div><div class="mr-card-sub">Bal: ${fmt(grandTxn-grandTxnPaid)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Payment</div><div class="mr-card-val" style="color:var(--blue-600)">${fmt(grandTxnPaid)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Due (Txn − Payment)</div><div class="mr-card-val" style="color:${grandTxnDue>0?'var(--red)':'var(--green)'}">${fmt(grandTxnDue)}</div></div>
     <div class="mr-card"><div class="mr-card-label">Total Commission</div><div class="mr-card-val" style="color:var(--orange)">${fmt(grandComm)}</div></div>
-    <div class="mr-card"><div class="mr-card-label">Comm Paid</div><div class="mr-card-val" style="color:var(--green)">${fmt(grandCommPaid)}</div><div class="mr-card-sub">Bal: ${fmt(grandComm-grandCommPaid)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Comm Paid</div><div class="mr-card-val" style="color:var(--green)">${fmt(grandCommPaid)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Comm Due</div><div class="mr-card-val" style="color:${grandCommDue>0?'var(--red)':'var(--green)'}">${fmt(grandCommDue)}</div></div>
   `;
 
   document.getElementById('ccSumBody').innerHTML=rows.map(({p,s})=>`<tr>
