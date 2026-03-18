@@ -1063,20 +1063,23 @@ function startListener() {
   if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
   if (!_db || !_fbRef || !window._fbMods) return;
   const { onValue } = window._fbMods;
+  let firstLoad = true;
   _unsubscribe = onValue(_fbRef, snap => {
     if (snap.exists()) {
       const raw = snap.val();
       const fresh = Array.isArray(raw) ? raw.filter(Boolean) : Object.values(raw).filter(Boolean);
-      // Only update if data actually changed
-      if (JSON.stringify(fresh) !== JSON.stringify(entries)) {
-        entries = fresh;
-        localStorage.setItem('dueEntries', JSON.stringify(entries));
-        refreshAll();
-        showSyncPulse();
+      // Always update from Firebase — Firebase is the source of truth
+      entries = fresh;
+      localStorage.setItem('dueEntries', JSON.stringify(entries));
+      refreshAll();
+      if (!firstLoad) showSyncPulse();
+      firstLoad = false;
+    } else {
+      // DB is truly empty — only push local data on first load if we have entries
+      if (firstLoad && entries.length) {
+        save();
       }
-    } else if (_connected) {
-      // DB is empty — push local data
-      if (entries.length) save();
+      firstLoad = false;
     }
   }, err => {
     console.warn('[FB] Listener error:', err);
@@ -1142,13 +1145,12 @@ async function autoConnect() {
     const { get } = await waitForSDK();
     const snap = await get(_fbRef);
     if (snap.exists()) {
+      // Firebase has data — always use Firebase as source of truth
       const raw = snap.val();
       entries = Array.isArray(raw) ? raw.filter(Boolean) : Object.values(raw).filter(Boolean);
       localStorage.setItem('dueEntries', JSON.stringify(entries));
-    } else if (entries.length) {
-      const { set } = await waitForSDK();
-      await set(_fbRef, entries);
     }
+    // Note: we do NOT push local data on connect — startListener handles initial empty DB case
     _connected = true;
     startListener();
     setUI('connected');
