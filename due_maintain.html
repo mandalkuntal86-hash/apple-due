@@ -574,7 +574,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
         <div class="box-body">
           <div class="fg">
             <div class="f"><label>Party Name *</label><input type="text" id="fParty" placeholder="e.g. Sharma Traders"></div>
-            <div class="f"><label>Bill Number *</label><input type="text" id="fBill" placeholder="e.g. INV-2025-001" oninput="checkBillExists()"></div>
+            <div class="f"><label>Bill Number</label><input type="text" id="fBill" placeholder="e.g. INV-2025-001 (optional)" oninput="checkBillExists()"></div>
             <div class="f"><label>Bill Date *</label><input type="date" id="fDate"></div>
             <div class="f"><label>Due Amount (₹) *</label><input type="number" id="fAmt" placeholder="0.00" min="0"></div>
             <div class="f"><label>Paid Amount (₹)</label><input type="number" id="fPaid" placeholder="0.00" value="0" min="0"></div>
@@ -601,6 +601,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn btn-edit btn-sm" onclick="editLastAdded()">✏️ Edit Bill</button>
+                <button class="btn btn-blue btn-sm" onclick="viewReceiptLastAdded()">🧾 View Receipt</button>
                 <button class="btn btn-outline btn-sm" onclick="document.getElementById('entrySuccessCard').style.display='none'">✕</button>
               </div>
             </div>
@@ -1581,9 +1582,10 @@ function addEntry() {
   const paid   = parseFloat(document.getElementById('fPaid').value)||0;
   const dueDays= parseInt(document.getElementById('fDays').value)||30;
   const remarks= document.getElementById('fRem').value.trim();
-  if (!party||!bill||!date||amount<=0) { toast('Fill Party, Bill No, Date & Amount!','err'); return; }
-  if (entries.find(e=>e.bill===bill)) { toast('Bill No already exists!','err'); return; }
-  const newEntry = {id:Date.now(),party,bill,date,amount,paid,dueDays,remarks,payments:[]};
+  if (!party||!date||amount<=0) { toast('Fill Party, Date & Amount!','err'); return; }
+  const finalBill = bill || ('AUTO-' + Date.now());
+  if (bill && entries.find(e=>e.bill===bill)) { toast('Bill No already exists!','err'); return; }
+  const newEntry = {id:Date.now(),party,bill:finalBill,date,amount,paid,dueDays,remarks,payments:[]};
   entries.push(newEntry);
   window._lastAddedId = newEntry.id;
   refreshAll();
@@ -1594,10 +1596,10 @@ function addEntry() {
   checkBillExists();
   // Show success card
   const sc = document.getElementById('entrySuccessCard');
-  document.getElementById('scBillName').textContent = '✔ Bill Added: ' + bill + ' — ' + party;
+  document.getElementById('scBillName').textContent = '✔ Bill Added: ' + finalBill + ' — ' + party;
   document.getElementById('scBillDetails').textContent = 'Date: ' + date + '  |  Amount: ' + fmt(amount) + '  |  Due: ' + dueDays + ' days';
   sc.style.display = 'block';
-  toast('Entry added — '+bill,'ok');
+  toast('Entry added — '+finalBill,'ok');
 }
 
 /* ── PAYMENT PARTY DROPDOWN ── */
@@ -1970,6 +1972,27 @@ function editFromReceipt() {
 }
 
 /* ── EDIT LAST ADDED ── */
+function viewReceiptLastAdded() {
+  const id = window._lastAddedId;
+  if (!id) { toast('No bill added yet','err'); return; }
+  const e = entries.find(en => String(en.id) === String(id));
+  if (!e) { toast('Bill not found','err'); return; }
+  // Switch to receipt sub-tab
+  document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('sub-receipt').classList.add('active');
+  document.querySelectorAll('.sub-tab').forEach(b => { if (b.textContent.includes('Receipt')) b.classList.add('active'); });
+  // Pre-fill receipt party & bill (rcptBill uses e.bill string as value)
+  populateRcptParty();
+  const rParty = document.getElementById('rcptParty');
+  if (rParty) { rParty.value = e.party; onRcptPartyChange(); }
+  setTimeout(() => {
+    const rBill = document.getElementById('rcptBill');
+    if (rBill) { rBill.value = e.bill; onRcptBillChange(); genReceipt(); }
+  }, 80);
+  document.getElementById('entrySuccessCard').style.display = 'none';
+}
+
 function editLastAdded() {
   const id = window._lastAddedId;
   if (!id) { toast('No bill added yet','err'); return; }
