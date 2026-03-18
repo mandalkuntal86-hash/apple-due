@@ -5,15 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DueLedger — Due Maintenance Software</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue, remove, serverTimestamp }
-    from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-  // Expose to global scope for the main script
-  window._fbMods = { initializeApp, getDatabase, ref, set, get, onValue, remove, serverTimestamp };
-  // Signal ready
-  window.dispatchEvent(new Event('fbReady'));
+<!-- Firebase SDK (compat - works reliably in plain HTML files) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+  // Firebase compat SDK is now available as window.firebase
+  window._fbReady = true;
 </script>
 <style>
 :root {
@@ -1165,7 +1162,6 @@ let _fbRef   = null;
 let _connected = false;
 let _fbApp   = null;
 let _unsubscribe = null;
-let _fbAppCounter = 0; // unique app name per init
 const FB_KEY = 'dueLedgerFbConfig';
 
 /* ── PRE-CONFIGURED FIREBASE (auto-seeded) ── */
@@ -1189,11 +1185,9 @@ const diff  = d => { if(!d)return 0; const a=new Date(d),b=new Date(); a.setHour
 
 /* ── SAVE (local + Firebase) ── */
 function save() {
-  // Always save locally first
   localStorage.setItem('dueEntries', JSON.stringify(entries));
-  // Push to Firebase if connected
-  if (_connected && _db && _fbRef && window._fbMods) {
-    window._fbMods.set(_fbRef, entries.length ? entries : [])
+  if (_connected && _fbRef) {
+    _fbRef.set(entries.length ? entries : [])
       .catch(e => console.warn('[FB] Save failed:', e.message));
   }
 }
@@ -1222,52 +1216,50 @@ function setUI(state) {
   if (txt) txt.textContent = m.tx;
 }
 
-/* ── WAIT FOR FIREBASE SDK ── */
+/* ── WAIT FOR FIREBASE SDK (compat) ── */
 async function waitForSDK(maxMs=8000) {
   const start = Date.now();
-  while (!window._fbMods) {
-    if (Date.now()-start > maxMs) throw new Error('Firebase SDK timeout');
-    await new Promise(r => setTimeout(r, 150));
+  while (!window.firebase || !window.firebase.database) {
+    if (Date.now()-start > maxMs) throw new Error('Firebase SDK timeout — check internet connection');
+    await new Promise(r => setTimeout(r, 100));
   }
-  return window._fbMods;
+  return window.firebase;
 }
 
-/* ── INIT FIREBASE APP (once) ── */
+/* ── INIT FIREBASE APP (compat SDK) ── */
 async function initFbApp(cfg) {
-  const { initializeApp, getDatabase, ref } = await waitForSDK();
-  // Always use the confirmed databaseURL directly — no guessing loops
-  // Firebase does not allow re-initializing with different DB URLs
-  // Always create a fresh app instance to avoid "already initialized" errors
+  await waitForSDK();
+  // Delete old app if exists
   if (_fbApp) {
-    try { _fbApp.delete && _fbApp.delete(); } catch(e) {}
-    _fbApp = null;
+    try { await _fbApp.delete(); } catch(e) {}
+    _fbApp = null; _db = null; _fbRef = null;
   }
-  _fbApp = initializeApp(cfg, 'dueledger-' + (++_fbAppCounter));
-  _db    = getDatabase(_fbApp, cfg.databaseURL);
-  _fbRef = ref(_db, 'dueledger/entries');
+  // Delete any lingering named app
+  const existing = (window.firebase.apps||[]).find(a=>a.name==='dueledger');
+  if (existing) { try { await existing.delete(); } catch(e) {} }
+  // Init fresh
+  _fbApp = window.firebase.initializeApp(cfg, 'dueledger');
+  _db    = _fbApp.database();
+  _fbRef = _db.ref('dueledger/entries');
 }
 
-/* ── REAL-TIME LISTENER ── */
+/* ── REAL-TIME LISTENER (compat) ── */
 function startListener() {
   if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
-  if (!_db || !_fbRef || !window._fbMods) return;
-  const { onValue } = window._fbMods;
+  if (!_fbRef) return;
   let firstLoad = true;
-  _unsubscribe = onValue(_fbRef, snap => {
+  // compat SDK uses .on()
+  _fbRef.on('value', snap => {
     if (snap.exists()) {
       const raw = snap.val();
       const fresh = Array.isArray(raw) ? raw.filter(Boolean) : Object.values(raw).filter(Boolean);
-      // Always update from Firebase — Firebase is the source of truth
       entries = fresh;
       localStorage.setItem('dueEntries', JSON.stringify(entries));
       refreshAll();
       if (!firstLoad) showSyncPulse();
       firstLoad = false;
     } else {
-      // DB is truly empty — only push local data on first load if we have entries
-      if (firstLoad && entries.length) {
-        save();
-      }
+      if (firstLoad && entries.length) save();
       firstLoad = false;
     }
   }, err => {
@@ -1275,6 +1267,8 @@ function startListener() {
     setUI('error');
     _connected = false;
   });
+  // Return unsubscribe function
+  _unsubscribe = () => _fbRef.off('value');
 }
 
 /* ── SYNC PULSE (visual feedback) ── */
@@ -1290,31 +1284,26 @@ async function doConnect(cfg, silent=false) {
   try {
     setUI('connecting');
     await initFbApp(cfg);
-    const { get, set } = await waitForSDK();
-    // Read from Firebase
-    const snap = await get(_fbRef);
+    const snap = await _fbRef.once('value');
     if (snap.exists()) {
       const raw = snap.val();
       entries = Array.isArray(raw) ? raw.filter(Boolean) : Object.values(raw).filter(Boolean);
       localStorage.setItem('dueEntries', JSON.stringify(entries));
     } else if (entries.length) {
-      // First time — push local data to Firebase
-      await set(_fbRef, entries);
+      await _fbRef.set(entries);
     }
     _connected = true;
     startListener();
     setUI('connected');
     localStorage.setItem(FB_KEY, JSON.stringify(cfg));
-    if (!silent) toast('🔥 Firebase connected — auto-syncing!','ok');
+    if (!silent) toast('🔥 Firebase connected!','ok');
     refreshAll();
     return true;
   } catch(e) {
     console.error('[FB] Connect failed:', e);
     _connected = false;
     setUI('error');
-    const msg = e.message || 'Unknown error';
-    console.error('[FB] Full error:', e);
-    if (!silent) toast('Firebase failed: '+msg.slice(0,60),'err');
+    if (!silent) toast('Firebase failed: '+(e.message||'').slice(0,60),'err');
     return false;
   }
 }
@@ -1339,15 +1328,12 @@ async function autoConnect() {
   setUI('connecting');
   try {
     await initFbApp(cfg);
-    const { get } = await waitForSDK();
-    const snap = await get(_fbRef);
+    const snap = await _fbRef.once('value');
     if (snap.exists()) {
-      // Firebase has data — always use Firebase as source of truth
       const raw = snap.val();
       entries = Array.isArray(raw) ? raw.filter(Boolean) : Object.values(raw).filter(Boolean);
       localStorage.setItem('dueEntries', JSON.stringify(entries));
     }
-    // Note: we do NOT push local data on connect — startListener handles initial empty DB case
     _connected = true;
     startListener();
     setUI('connected');
@@ -1359,7 +1345,7 @@ async function autoConnect() {
     _connected = false; _fbApp = null;
     setUI('local');
     const msg = e && e.message ? e.message.slice(0,80) : 'Unknown error';
-    toast('Firebase error: ' + msg, 'err');
+    toast('⚠️ ' + msg, 'err');
   }
 }
 
@@ -2123,8 +2109,8 @@ function clearAllData() {
 async function confirmClearAll() {
   entries = [];
   localStorage.removeItem('dueEntries');
-  if (_connected && _db && _fbRef && window._fbMods) {
-    try { await window._fbMods.remove(_fbRef); }
+  if (_connected && _fbRef) {
+    try { await _fbRef.remove(); }
     catch(e) { console.warn('[FB] Clear failed:', e); }
   }
   document.getElementById('clearOverlay').classList.remove('show');
