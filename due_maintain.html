@@ -32,6 +32,27 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--font);background:var(--gray-50);color:var(--gray-900);min-height:100vh;}
 
+/* ── AUTH ── */
+.auth-overlay{position:fixed;inset:0;background:rgba(12,30,74,.7);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;}
+.auth-box{background:#fff;border-radius:16px;padding:36px 40px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(12,30,74,.25);text-align:center;}
+.auth-logo{font-size:2rem;font-weight:800;color:var(--blue-800);letter-spacing:-.3px;margin-bottom:4px;}
+.auth-logo span{color:var(--blue-500);}
+.auth-sub{font-size:.75rem;color:var(--gray-500);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;margin-bottom:28px;}
+.auth-field{text-align:left;margin-bottom:14px;}
+.auth-field label{display:block;font-size:.72rem;font-weight:600;color:var(--gray-500);font-family:var(--mono);margin-bottom:5px;letter-spacing:.3px;}
+.auth-field input{width:100%;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:9px;font-family:var(--font);font-size:.95rem;outline:none;transition:border-color .2s;box-sizing:border-box;}
+.auth-field input:focus{border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(59,130,246,.12);}
+.auth-err{color:var(--red);font-size:.78rem;font-family:var(--mono);margin-top:-8px;margin-bottom:10px;display:none;}
+.auth-btn{width:100%;padding:12px;background:var(--blue-600);color:#fff;border:none;border-radius:9px;font-family:var(--font);font-weight:700;font-size:.95rem;cursor:pointer;transition:background .18s;margin-top:4px;}
+.auth-btn:hover{background:var(--blue-700);}
+.auth-guest{margin-top:14px;font-size:.78rem;color:var(--gray-500);cursor:pointer;text-decoration:underline;}
+.auth-guest:hover{color:var(--blue-600);}
+.admin-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:3px 12px;font-size:.7rem;font-weight:700;color:#fff;font-family:var(--mono);cursor:pointer;transition:background .15s;}
+.admin-badge:hover{background:rgba(255,255,255,.25);}
+.guest-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:3px 12px;font-size:.7rem;font-weight:600;color:rgba(255,255,255,.7);font-family:var(--mono);cursor:pointer;}
+.guest-badge:hover{background:rgba(255,255,255,.2);color:#fff;}
+/* hide admin-only elements when guest */
+body.guest-mode .admin-only{display:none!important;}
 /* ── HEADER ── */
 header{
   background:linear-gradient(135deg,var(--blue-800),var(--blue-700));
@@ -419,6 +440,25 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-logo">Due<span>Ledger</span></div>
+    <div class="auth-sub">Due Maintenance Software</div>
+    <div class="auth-field">
+      <label>User ID</label>
+      <input type="text" id="authUser" placeholder="Enter user ID" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('authPass').focus()">
+    </div>
+    <div class="auth-field">
+      <label>Password</label>
+      <input type="password" id="authPass" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="auth-err" id="authErr">❌ Invalid ID or password</div>
+    <button class="auth-btn" onclick="doLogin()">🔐 Login as Admin</button>
+    <div class="auth-guest" onclick="doGuest()">Continue as Guest (View Only)</div>
+  </div>
+</div>
+
 <!-- HEADER -->
 <header>
   <div class="logo">
@@ -433,6 +473,10 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
       <div class="conn-dot"></div>
       <span id="connLabel">Local</span>
     </button>
+    <div id="authBadgeWrap" style="display:flex;align-items:center;gap:8px">
+      <span id="authBadge" class="guest-badge" onclick="openLoginFromApp()">👤 Guest</span>
+      <button id="logoutBtn" onclick="doLogout()" style="display:none;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:20px;padding:3px 12px;font-size:.7rem;font-weight:600;cursor:pointer;font-family:var(--mono)">Logout</button>
+    </div>
     <div class="header-date" id="hDate"></div>
   </div>
 </header>
@@ -483,7 +527,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
     <!-- Summary cards -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
       <div class="sec-head" style="margin-bottom:0;flex:1">📊 Financial Overview</div>
-      <button class="btn btn-red btn-sm" onclick="clearAllData()" style="white-space:nowrap">🗑️ Clear All Data</button>
+      <button class="btn btn-red btn-sm admin-only" onclick="clearAllData()" style="white-space:nowrap">🗑️ Clear All Data</button>
     </div>
     <div class="summary-grid">
       <div class="s-card">
@@ -598,8 +642,8 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 
     <!-- Sub-tab bar -->
     <div class="sub-tab-bar">
-      <button class="sub-tab active" onclick="switchSub('entry',this)">➕ Add Entry</button>
-      <button class="sub-tab" onclick="switchSub('payment',this)">💳 Record Payment</button>
+      <button class="sub-tab active admin-only" onclick="switchSub('entry',this)">➕ Add Entry</button>
+      <button class="sub-tab admin-only" onclick="switchSub('payment',this)">💳 Record Payment</button>
       <button class="sub-tab" onclick="switchSub('receipt',this)">🧾 Receipt</button>
       <button class="sub-tab" onclick="switchSub('ledger',this)">📒 Ledger</button>
       <button class="sub-tab" onclick="switchSub('tracker',this)">⏰ Due Tracker</button>
@@ -623,8 +667,8 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
             <div class="f" style="grid-column:1/-1"><label>Remarks</label><input type="text" id="fRem" placeholder="Optional note…"></div>
           </div>
           <div class="f-actions">
-            <button class="btn btn-blue" onclick="addEntry()">➕ Add Entry</button>
-            <button class="btn btn-edit" onclick="openEditByBill()" id="editBillBtn" style="display:none">✏️ Edit Existing</button>
+            <button class="btn btn-blue admin-only" onclick="addEntry()">➕ Add Entry</button>
+            <button class="btn btn-edit admin-only" onclick="openEditByBill()" id="editBillBtn" style="display:none">✏️ Edit Existing</button>
           </div>
           <div id="editBillHint" style="display:none;margin-top:8px;font-size:.76rem;font-family:var(--mono);color:var(--orange);background:var(--orange-bg);border:1px solid var(--orange-bd);border-radius:7px;padding:7px 12px">
             ⚠️ Bill number already exists — click <strong>Edit Existing</strong> to modify it
@@ -641,7 +685,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
                 </div>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-edit btn-sm" onclick="editLastAdded()">✏️ Edit Bill</button>
+                <button class="btn btn-edit btn-sm admin-only" onclick="editLastAdded()">✏️ Edit Bill</button>
                 <button class="btn btn-blue btn-sm" onclick="viewReceiptLastAdded()">🧾 View Receipt</button>
                 <button class="btn btn-outline btn-sm" onclick="document.getElementById('entrySuccessCard').style.display='none'">✕</button>
               </div>
@@ -655,11 +699,11 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
     <div class="box" style="margin-top:18px" id="bulkImportBox">
       <div class="box-head" style="justify-content:space-between">
         <div style="display:flex;align-items:center;gap:8px"><span>📥</span><div class="box-title">Bulk Import via Excel</div></div>
-        <button class="btn btn-outline btn-sm" onclick="downloadBulkTemplate()">⬇️ Download Template</button>
+        <button class="btn btn-outline btn-sm admin-only" onclick="downloadBulkTemplate()">⬇️ Download Template</button>
       </div>
       <div class="box-body">
         <!-- Drop zone -->
-        <div class="bulk-drop" id="bulkDrop" onclick="document.getElementById('bulkFileIn').click()"
+        <div class="bulk-drop admin-only" id="bulkDrop" onclick="document.getElementById('bulkFileIn').click()"
           ondragover="event.preventDefault();this.classList.add('drag')"
           ondragleave="this.classList.remove('drag')"
           ondrop="event.preventDefault();this.classList.remove('drag');handleBulkFile(event.dataTransfer.files[0])">
@@ -677,7 +721,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
               <span id="bulkStats" style="font-size:.76rem;font-family:var(--mono);color:var(--gray-500);margin-left:10px"></span>
             </div>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-blue" onclick="if(!this.disabled)confirmBulkImport()" id="bulkImportBtn">✅ Import Valid Rows</button>
+              <button class="btn btn-blue admin-only" onclick="if(!this.disabled)confirmBulkImport()" id="bulkImportBtn">✅ Import Valid Rows</button>
               <button class="btn btn-outline btn-sm" onclick="clearBulkPreview()">✕ Clear</button>
             </div>
           </div>
@@ -791,7 +835,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
                 </div>
                 <div style="display:flex;flex-direction:column;gap:6px;justify-content:flex-end">
                   <button class="btn btn-outline btn-sm" onclick="setPayFull()" style="font-size:.8rem">💯 Pay Full Balance</button>
-                  <button class="btn btn-blue" onclick="recordSinglePayment()" style="font-size:.88rem;padding:9px 18px">✅ Record Payment</button>
+                  <button class="btn btn-blue admin-only" onclick="recordSinglePayment()" style="font-size:.88rem;padding:9px 18px">✅ Record Payment</button>
                 </div>
               </div>
             </div>
@@ -819,7 +863,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
         </div>
 
         <div class="f-actions">
-          <button class="btn btn-blue" onclick="recordPayment()" style="padding:11px 28px;font-size:.95rem">✅ Record Payment</button>
+          <button class="btn btn-blue admin-only" onclick="recordPayment()" style="padding:11px 28px;font-size:.95rem">✅ Record Payment</button>
           <button class="btn btn-outline" onclick="clearPayForm()">✕ Clear</button>
         </div>
       </div>
@@ -901,7 +945,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
             </div>
             <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <button class="btn btn-blue" onclick="printReceipt()">🖨️ Print Receipt</button>
-              <button class="btn btn-edit" style="background:var(--blue-50);color:var(--blue-700);border:1.5px solid var(--blue-300);font-weight:700" onclick="editFromReceipt()">✏️ Edit This Bill</button>
+              <button class="btn btn-edit admin-only" style="background:var(--blue-50);color:var(--blue-700);border:1.5px solid var(--blue-300);font-weight:700" onclick="editFromReceipt()">✏️ Edit This Bill</button>
               <button class="btn btn-outline" onclick="closeReceipt()">✕ Close</button>
             </div>
           </div>
@@ -1220,9 +1264,9 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
     </div>
     <div style="height:1px;background:var(--blue-100);margin:16px 0"></div>
     <div class="f-actions">
-      <button class="btn btn-blue" onclick="saveEdit()" style="padding:10px 28px">💾 Save Changes</button>
+      <button class="btn btn-blue admin-only" onclick="saveEdit()" style="padding:10px 28px">💾 Save Changes</button>
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-red btn-sm" onclick="delFromModal()" style="margin-left:auto">🗑️ Delete</button>
+      <button class="btn btn-red btn-sm admin-only" onclick="delFromModal()" style="margin-left:auto">🗑️ Delete</button>
     </div>
   </div>
 </div>
@@ -1235,7 +1279,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
     <p style="color:var(--gray-500);font-size:.88rem;margin-bottom:8px">This will permanently delete <strong id="clearCount">all</strong> entries from DueLedger.</p>
     <p style="color:var(--red);font-size:.82rem;font-family:var(--mono);background:var(--red-bg);border:1px solid var(--red-bd);border-radius:7px;padding:8px 12px;margin-bottom:20px">This action cannot be undone!</p>
     <div style="display:flex;gap:10px;justify-content:center">
-      <button class="btn btn-red" onclick="confirmClearAll()" style="padding:10px 28px">🗑️ Yes, Delete All</button>
+      <button class="btn btn-red admin-only" onclick="confirmClearAll()" style="padding:10px 28px">🗑️ Yes, Delete All</button>
       <button class="btn btn-outline" onclick="document.getElementById('clearOverlay').classList.remove('show')">Cancel</button>
     </div>
   </div>
@@ -1835,6 +1879,7 @@ function renderDashboard() {
 
 /* ── ADD ENTRY ── */
 function addEntry() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   const party  = document.getElementById('fParty').value.trim();
   const bill   = document.getElementById('fBill').value.trim();
   const date   = document.getElementById('fDate').value;
@@ -2124,6 +2169,7 @@ function setPayFull() {
 }
 
 function recordSinglePayment() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   const val   = document.getElementById('payBillNo').value;
   const dt    = document.getElementById('payDate').value;
   const mode  = document.getElementById('payMode').value;
@@ -2144,6 +2190,7 @@ function recordSinglePayment() {
 }
 
 function recordPayment() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   const party = document.getElementById('payParty').value;
   const dt    = document.getElementById('payDate').value;
   const mode  = document.getElementById('payMode').value;
@@ -2207,18 +2254,20 @@ function renderLedger(q) {
       <td><span class="badge ${dc}">${el}d</span></td>
       <td><span class="badge ${sc}">${sl}</span></td>
       <td><div class="act-cell">
-        <button class="btn btn-edit btn-sm" onclick="openEdit(${ri})">✏️</button>
-        <button class="btn btn-green btn-sm" onclick="markPaid(${ri})">✅</button>
-        <button class="btn btn-red btn-sm" onclick="del(${ri})">🗑️</button>
+        <button class="btn btn-edit btn-sm admin-only" onclick="openEdit(${ri})">✏️</button>
+        <button class="btn btn-green btn-sm admin-only" onclick="markPaid(${ri})">✅</button>
+        <button class="btn btn-red btn-sm admin-only" onclick="del(${ri})">🗑️</button>
       </div></td>
     </tr>`;
   }).join('');
 }
 
 function del(i) {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   if (confirm('Delete this entry?')) { entries.splice(i,1); refreshAll(); toast('Deleted','err'); }
 }
 function markPaid(i) {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   entries[i].paid=entries[i].amount;
   refreshAll(); toast('Marked as Paid ✅','ok');
 }
@@ -2322,6 +2371,7 @@ function closeModal() {
 }
 
 function saveEdit() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   const party  = document.getElementById('eParty').value.trim();
   const bill   = document.getElementById('eBill').value.trim();
   const date   = document.getElementById('eDate').value;
@@ -2370,6 +2420,7 @@ function saveEdit() {
 }
 
 function delFromModal() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   const e = entries[editIdx];
   if (confirm('Delete bill '+e.bill+' for '+e.party+'?')) {
     entries.splice(editIdx,1);
@@ -2384,6 +2435,7 @@ function clearAllData() {
 }
 
 async function confirmClearAll() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   entries = [];
   localStorage.removeItem('dueEntries');
   if (_connected && _fbRef) {
@@ -3192,6 +3244,7 @@ function renderBulkPreview() {
 }
 
 function confirmBulkImport() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   const validBills=_bulkRows.filter(r=>!r.err.length&&!r.isDup);
   const validPays=_bulkPayRows.filter(r=>!r.err.length);
   if(!validBills.length&&!validPays.length){toast('No valid rows to import','err');return;}
@@ -3253,6 +3306,105 @@ function clearBulkPreview() {
   document.getElementById('bulkPreviewWrap').style.display='none';
   document.getElementById('bulkFileIn').value='';
 }
+
+
+/* ══════════════════════════════════════════════
+   AUTH — ADMIN / GUEST
+══════════════════════════════════════════════ */
+const ADMIN_ID   = 'mandalkuntal';
+const ADMIN_PASS = 'Buku@2016';
+let _isAdmin = false;
+
+function doLogin() {
+  const id   = document.getElementById('authUser').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const err  = document.getElementById('authErr');
+  if (id === ADMIN_ID && pass === ADMIN_PASS) {
+    _isAdmin = true;
+    sessionStorage.setItem('dlAuth', 'admin');
+    document.getElementById('authOverlay').style.display = 'none';
+    applyAuthMode();
+    toast('Welcome, Admin! 🎉', 'ok');
+  } else {
+    err.style.display = 'block';
+    document.getElementById('authPass').value = '';
+    document.getElementById('authPass').focus();
+    setTimeout(() => err.style.display = 'none', 3000);
+  }
+}
+
+function doGuest() {
+  _isAdmin = false;
+  sessionStorage.setItem('dlAuth', 'guest');
+  document.getElementById('authOverlay').style.display = 'none';
+  applyAuthMode();
+}
+
+function doLogout() {
+  _isAdmin = false;
+  sessionStorage.removeItem('dlAuth');
+  document.getElementById('authUser').value = '';
+  document.getElementById('authPass').value = '';
+  document.getElementById('authErr').style.display = 'none';
+  document.getElementById('authOverlay').style.display = 'flex';
+  applyAuthMode();
+}
+
+function openLoginFromApp() {
+  if (_isAdmin) return;
+  document.getElementById('authUser').value = '';
+  document.getElementById('authPass').value = '';
+  document.getElementById('authErr').style.display = 'none';
+  document.getElementById('authOverlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('authUser').focus(), 100);
+}
+
+function applyAuthMode() {
+  const badge    = document.getElementById('authBadge');
+  const logoutBtn= document.getElementById('logoutBtn');
+  if (_isAdmin) {
+    document.body.classList.remove('guest-mode');
+    badge.textContent = '🔐 Admin';
+    badge.className   = 'admin-badge';
+    logoutBtn.style.display = 'inline-block';
+    // Restore Add Entry as default active sub-tab
+    const addEntryTab = document.querySelector('.sub-tab.admin-only');
+    if (addEntryTab && !document.querySelector('.sub-panel.active#sub-entry')) {
+      // keep whatever is active
+    }
+  } else {
+    document.body.classList.add('guest-mode');
+    badge.textContent = '👤 Guest — View Only';
+    badge.className   = 'guest-badge';
+    logoutBtn.style.display = 'none';
+    // Switch to ledger if current sub-tab is admin-only
+    const activeSub = document.querySelector('.sub-panel.active');
+    if (activeSub && (activeSub.id === 'sub-entry' || activeSub.id === 'sub-payment')) {
+      document.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
+      document.querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
+      const ledgerPanel = document.getElementById('sub-ledger');
+      const ledgerBtn   = document.querySelector('.sub-tab:not(.admin-only)');
+      if (ledgerPanel) ledgerPanel.classList.add('active');
+      if (ledgerBtn)   ledgerBtn.classList.add('active');
+      renderLedger('');
+    }
+  }
+}
+
+// Guard all write functions
+function requireAdmin(fn) {
+  if (!_isAdmin) { toast('🔐 Admin login required', 'err'); openLoginFromApp(); return false; }
+  return fn();
+}
+
+// Check session on load
+(function checkSession() {
+  const s = sessionStorage.getItem('dlAuth');
+  if (s === 'admin') { _isAdmin = true; document.getElementById('authOverlay').style.display = 'none'; }
+  else if (s === 'guest') { _isAdmin = false; document.getElementById('authOverlay').style.display = 'none'; }
+  else { return; } // show overlay
+  applyAuthMode();
+})();
 
 /* ── INIT ── */
 try {
