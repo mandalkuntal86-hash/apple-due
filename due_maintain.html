@@ -1249,7 +1249,16 @@ const FB_KEY = 'dueLedgerFbConfig';
 /* ── HELPERS ── */
 const fmt   = n => '₹' + Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const today = () => new Date().toISOString().split('T')[0];
-const diff  = d => { if(!d)return 0; const a=new Date(d),b=new Date(); a.setHours(0,0,0,0);b.setHours(0,0,0,0); return Math.floor((b-a)/86400000); };
+const diff  = d => {
+  if(!d) return 0;
+  let s = String(d).trim();
+  // Normalize DD.MM.YYYY / DD-MM-YYYY / DD/MM/YYYY → YYYY-MM-DD
+  const m1 = s.match(/^(\d{1,2})[\-\/.](\d{1,2})[\-\/.](\d{4})$/);
+  if (m1) s = m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
+  const a=new Date(s), b=new Date();
+  a.setHours(0,0,0,0); b.setHours(0,0,0,0);
+  return Math.floor((b-a)/86400000);
+};
 
 /* ── SAVE (local + Firebase) ── */
 function save() {
@@ -2504,7 +2513,13 @@ function populateMRFilters() {
   const yrSel = document.getElementById('mrYear');
   if (!yrSel) return;
   const curYr = yrSel.value;
-  const years = [...new Set(entries.map(e => e.date ? e.date.slice(0,4) : null).filter(Boolean))].sort().reverse();
+  const years = [...new Set(entries.map(e => {
+    if (!e.date) return null;
+    // YYYY-MM-DD → first 4 chars; DD.MM.YYYY or DD/MM/YYYY → last 4 chars
+    const s = String(e.date).trim();
+    const m = s.match(/(\d{4})/g);
+    return m ? m.find(y => +y > 1900 && +y < 2100) : null;
+  }).filter(Boolean))].sort().reverse();
   const thisYear = new Date().getFullYear().toString();
   if (!years.includes(thisYear)) years.unshift(thisYear);
   yrSel.innerHTML = '<option value="">— Select Year —</option>' +
@@ -2535,10 +2550,25 @@ function renderMonthReport() {
 
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  // Filter entries
-  let list = entries.filter(e => e.date && e.date.startsWith(year));
+  // Normalize date to YYYY-MM-DD for filtering
+  const normDate = d => {
+    if (!d) return '';
+    const s = String(d).trim();
+    const m1 = s.match(/^(\d{1,2})[\-\/.](\d{1,2})[\-\/.](\d{4})$/);
+    const m2 = s.match(/^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})$/);
+    if (m1) return m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
+    if (m2) return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');
+    return s;
+  };
+  // Filter entries by year/month using normalized dates
+  let list = entries.filter(e => {
+    const nd = normDate(e.date);
+    return nd && nd.startsWith(year);
+  });
   if (party) list = list.filter(e => e.party === party);
-  if (month) list = list.filter(e => e.date.slice(5,7) === month);
+  if (month) list = list.filter(e => normDate(e.date).slice(5,7) === month);
+  // Normalize dates in list so all subsequent slicing works correctly
+  list = list.map(e => ({...e, date: normDate(e.date)}));
 
   // Summary cards
   const totBilled   = list.reduce((s,e) => s + +e.amount, 0);
@@ -2561,7 +2591,7 @@ function renderMonthReport() {
     mBreak.style.display = 'block';
     const monthData = {};
     list.forEach(e => {
-      const m = e.date.slice(5,7);
+      const m = normDate(e.date).slice(5,7);
       if (!monthData[m]) monthData[m] = {bills:0,billed:0,collected:0,overdue:0};
       const b = +e.amount - +e.paid;
       const ov = b>0 && diff(e.date)>e.dueDays;
@@ -2728,12 +2758,19 @@ function downloadBulkTemplate() {
 /* ── helpers ── */
 function parseDate(raw_d) {
   if (!raw_d) return '';
+  // Excel serial number (e.g. 45678)
+  if (typeof raw_d === 'number') {
+    const d = new Date(Math.round((raw_d - 25569) * 86400 * 1000));
+    return d.toISOString().split('T')[0];
+  }
   if (raw_d instanceof Date) return raw_d.toISOString().split('T')[0];
   const s = String(raw_d).trim();
-  const m1 = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})$/);
+  // DD-MM-YYYY, DD/MM/YYYY, DD.MM.YYYY
+  const m1 = s.match(/^(\d{1,2})[\-\/.](\d{1,2})[\-\/.](\d{4})$/);
+  // YYYY-MM-DD, YYYY/MM/DD
   const m2 = s.match(/^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})$/);
   if (m1) return m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
-  if (m2) return s.replace(/\//g,'-');
+  if (m2) return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');
   return s;
 }
 function colIdx(headers, keys) {
