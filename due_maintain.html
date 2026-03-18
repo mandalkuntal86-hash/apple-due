@@ -3914,12 +3914,11 @@ function getCCDashData() {
   const lbl=document.getElementById('ccdRangeLabel');
   if(lbl) lbl.textContent = (from||to) ? (from||'…')+' → '+(to||'…') : '';
   const txns = (!from&&!to) ? [...ccTxns] : ccTxns.filter(t=>(!from||t.date>=from)&&(!to||t.date<=to));
-  const pays = (!from&&!to) ? [...ccPayments] : ccPayments.filter(p=>(!from||p.date>=from)&&(!to||p.date<=to));
-  return {txns, pays, from, to};
+  return {txns, from, to};
 }
 
 function renderCCDash() {
-  const {txns, pays} = getCCDashData();
+  const {txns} = getCCDashData();
 
   const totTxn      = txns.reduce((s,t)=>s + +t.amount, 0);
   const totComm     = txns.reduce((s,t)=>s + ccCommAmt(+t.amount, +t.rentPct||ccGetRate(t.party)), 0);
@@ -3958,7 +3957,7 @@ function renderCCDash() {
       <div class="s-icon">✅</div>
       <div class="s-label">Commission Paid</div>
       <div class="s-value" style="font-size:1.5rem;color:var(--green)">${fmt(totCommPaid)}</div>
-      <div class="s-sub">${filtCommPays.length} payment${filtCommPays.length!==1?'s':''}</div>
+      <div class="s-sub">Bal: ${fmt(totBal)}</div>
       <div class="s-card-bg" style="background:var(--green)"></div>
     </div>
     <div class="s-card">
@@ -4028,7 +4027,7 @@ function renderCCDash() {
   }
 
   // Recent payments (last 5)
-  const allRecentPays=[...filtTxnPays.map(p=>({...p,ptype:'txn'})),...filtCommPays.map(p=>({...p,ptype:'comm'}))].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  const allRecentPays=[...filtTxnPays.map(p=>({...p,ptype:'txn'})),...filtCommPays.map(p=>({...p,ptype:'comm'}))].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,5);
   const recentPay=allRecentPays;
   const rpDiv=document.getElementById('ccdRecentPay');
   if(!recentPay.length) {
@@ -4476,7 +4475,7 @@ function refreshCCPartyLists() {
 function clearCCData() {
   if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   if(!confirm('Delete ALL credit card transactions, payments and commission rates? This cannot be undone!')) return;
-  ccTxns=[]; ccPayments=[]; ccCommRates={};
+  ccTxns=[]; ccTxnPays=[]; ccCommPays=[]; ccCommRates={};
   saveCC();
   renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
   toast('CC data cleared','err');
