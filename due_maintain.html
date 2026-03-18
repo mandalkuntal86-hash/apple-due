@@ -968,10 +968,9 @@ const FB_KEY = 'dueLedgerFbConfig';
     projectId:   "apple-due",
     storageBucket: "apple-due.firebasestorage.app",
     messagingSenderId: "125110818533",
-    appId:       "1:125110818533:web:07a1d3d544f3694663a60c",
-    databaseURL: "https://apple-due-default-rtdb.firebaseio.com"
+    appId:       "1:125110818533:web:25e8f4b9d7d19cba63a60c",
+    databaseURL: "https://apple-due-default-rtdb.asia-southeast1.firebasedatabase.app"
   };
-  // Always apply the latest preset config
   localStorage.setItem(FB_KEY, JSON.stringify(PRESET));
 })();
 
@@ -1031,8 +1030,32 @@ async function initFbApp(cfg) {
   if (!_fbApp) {
     _fbApp = initializeApp(cfg, 'dueledger');
   }
-  _db    = getDatabase(_fbApp);
-  _fbRef = ref(_db, 'dueledger/entries');
+  // Try databaseURL from config, then fall back to common regional patterns
+  const urls = [
+    cfg.databaseURL,
+    `https://${cfg.projectId}-default-rtdb.firebaseio.com`,
+    `https://${cfg.projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`,
+    `https://${cfg.projectId}-default-rtdb.europe-west1.firebasedatabase.app`,
+  ].filter(Boolean);
+  let lastErr;
+  for (const url of urls) {
+    try {
+      _db    = getDatabase(_fbApp, url);
+      _fbRef = ref(_db, 'dueledger/entries');
+      // Quick ping test
+      const { get } = await waitForSDK();
+      await get(_fbRef);
+      // Update stored config with working URL
+      cfg.databaseURL = url;
+      localStorage.setItem(FB_KEY, JSON.stringify(cfg));
+      console.log('[FB] Connected using URL:', url);
+      return;
+    } catch(e) {
+      lastErr = e;
+      console.warn('[FB] URL failed:', url, e.message);
+    }
+  }
+  throw lastErr;
 }
 
 /* ── REAL-TIME LISTENER ── */
@@ -1097,7 +1120,13 @@ async function doConnect(cfg, silent=false) {
     console.error('[FB] Connect failed:', e);
     _connected = false;
     setUI('error');
-    if (!silent) toast('Connection failed: '+e.message.slice(0,55),'err');
+    const msg = e.message || 'Unknown error';
+    if (!silent) toast('Firebase failed: '+msg.slice(0,60),'err');
+    console.error('[FB] Full error:', e);
+    // Show setup overlay so user can fix config
+    if (!silent) {
+      document.getElementById('fbSetupOverlay').classList.remove('hidden');
+    }
     return false;
   }
 }
@@ -1143,13 +1172,19 @@ async function connectFirebase() {
 /* ── SETUP UI HELPERS ── */
 function openFbSetup() {
   const cfg = (() => { try { return JSON.parse(localStorage.getItem(FB_KEY)); } catch(e){return null;} })();
-  if (cfg) {
-    document.getElementById('fbApiKey').value     = cfg.apiKey      || '';
-    document.getElementById('fbAuthDomain').value = cfg.authDomain  || '';
-    document.getElementById('fbDbUrl').value       = cfg.databaseURL || '';
-    document.getElementById('fbProjectId').value   = cfg.projectId   || '';
-    document.getElementById('fbAppId').value       = cfg.appId       || '';
-  }
+  const preset = {
+    apiKey: "AIzaSyDezCF2hPatttIJMQ1vo5LnurgLQf3McLo",
+    authDomain: "apple-due.firebaseapp.com",
+    databaseURL: cfg && cfg.databaseURL || "",
+    projectId: "apple-due",
+    appId: "1:125110818533:web:07a1d3d544f3694663a60c"
+  };
+  const src = cfg || preset;
+  document.getElementById('fbApiKey').value     = src.apiKey      || preset.apiKey;
+  document.getElementById('fbAuthDomain').value = src.authDomain  || preset.authDomain;
+  document.getElementById('fbDbUrl').value       = src.databaseURL || '';
+  document.getElementById('fbProjectId').value   = src.projectId   || preset.projectId;
+  document.getElementById('fbAppId').value       = src.appId       || preset.appId;
   document.getElementById('fbSetupOverlay').classList.remove('hidden');
 }
 
@@ -1928,20 +1963,24 @@ function renderTracker(type) {
 }
 
 /* ── INIT ── */
-document.getElementById('hDate').textContent =
-  new Date().toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
-document.getElementById('fDate').value   = today();
-document.getElementById('payDate').value = today();
+try {
+  document.getElementById('hDate').textContent =
+    new Date().toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('fDate').value   = today();
+  document.getElementById('payDate').value = today();
 
-// Attach live preview listeners for edit modal
-['eAmt','ePaid'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener('input', updateEditPreview);
-});
+  // Attach live preview listeners for edit modal
+  ['eAmt','ePaid'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateEditPreview);
+  });
 
-// Initial render (data may update again once Firebase connects)
-updateSummary(); renderDashboard(); renderLedger(''); renderTracker('all');
-populatePayParty(); populateRcptParty();
+  // Initial render (data may update again once Firebase connects)
+  updateSummary(); renderDashboard(); renderLedger(''); renderTracker('all');
+  populatePayParty(); populateRcptParty();
+} catch(initErr) {
+  console.error('[INIT] Error during page init:', initErr);
+}
 </script>
 </body>
 </html>
