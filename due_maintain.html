@@ -462,9 +462,9 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
             <button class="pill"        id="dPillCustom" onclick="setDashPeriod('custom',this)">Custom</button>
           </div>
           <div id="dCustomRange" style="display:none;gap:8px;align-items:center;flex-wrap:wrap">
-            <input type="date" id="dFrom" style="padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:var(--font);font-size:.82rem" onchange="renderDashboard()">
+            <input type="date" id="dFrom" style="padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:var(--font);font-size:.82rem" onchange="applyDashCustom()">
             <span style="color:var(--gray-400);font-size:.8rem">to</span>
-            <input type="date" id="dTo"   style="padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:var(--font);font-size:.82rem" onchange="renderDashboard()">
+            <input type="date" id="dTo"   style="padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:var(--font);font-size:.82rem" onchange="applyDashCustom()">
           </div>
           <span id="dRangeLabel" style="font-family:var(--mono);font-size:.72rem;color:var(--blue-600);margin-left:auto"></span>
         </div>
@@ -1624,6 +1624,18 @@ function setDashPeriod(period, btn) {
   btn.classList.add('active');
   const cr = document.getElementById('dCustomRange');
   cr.style.display = period==='custom' ? 'flex' : 'none';
+  // For custom, wait for user to pick dates — but still refresh if dates already set
+  if (period === 'custom') {
+    const f = document.getElementById('dFrom')?.value;
+    const t = document.getElementById('dTo')?.value;
+    if (!f && !t) return; // don't render yet, show range pickers first
+  }
+  renderDashboard();
+  updateSummary();
+}
+
+function applyDashCustom() {
+  // Called when dFrom or dTo changes
   renderDashboard();
   updateSummary();
 }
