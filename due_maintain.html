@@ -265,6 +265,17 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 .rcpt-bill-info.show{display:flex;}
 .rcpt-bil-field span{font-size:.65rem;font-family:var(--mono);color:var(--gray-500);letter-spacing:.8px;text-transform:uppercase;display:block;margin-bottom:2px;}
 
+/* ── CUSTOMER LEDGER ── */
+.cl-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--blue-100);box-shadow:var(--shadow-sm);padding:16px 18px;}
+.cl-card-label{font-size:.67rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gray-500);font-family:var(--mono);}
+.cl-card-val{font-size:1.5rem;font-weight:800;margin-top:4px;}
+#clTable thead tr,#clHistTable thead tr{background:var(--blue-900);}
+#clTable td,#clHistTable td{padding:10px 13px;border-top:1px solid var(--blue-50);font-size:.85rem;vertical-align:middle;}
+#clTable tfoot td{padding:11px 13px;font-weight:800;font-family:var(--mono);background:var(--blue-50);border-top:2px solid var(--blue-200);}
+.cl-txn-bill{background:var(--blue-50);color:var(--blue-700);font-family:var(--mono);font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:6px;}
+.cl-txn-due{background:var(--red-bg);color:var(--red);font-family:var(--mono);font-size:.73rem;font-weight:700;padding:2px 8px;border-radius:6px;}
+.cl-txn-pay{background:var(--green-bg);color:var(--green);font-family:var(--mono);font-size:.73rem;font-weight:700;padding:2px 8px;border-radius:6px;}
+
 /* ── FILTER PILLS ── */
 .pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
 .pill{padding:6px 14px;border-radius:20px;border:1.5px solid var(--blue-200);background:var(--white);color:var(--gray-500);font-family:var(--mono);font-size:.73rem;cursor:pointer;transition:all .18s;font-weight:500;}
@@ -555,6 +566,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
       <button class="sub-tab" onclick="switchSub('receipt',this)">🧾 Receipt</button>
       <button class="sub-tab" onclick="switchSub('ledger',this)">📒 Ledger</button>
       <button class="sub-tab" onclick="switchSub('tracker',this)">⏰ Due Tracker</button>
+      <button class="sub-tab" onclick="switchSub('custledger',this)">📋 Customer Ledger</button>
     </div>
 
     <!-- ── ADD ENTRY ── -->
@@ -815,6 +827,82 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
             <tbody id="tBody"></tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <!-- ── CUSTOMER LEDGER ── -->
+    <div class="sub-panel" id="sub-custledger">
+
+      <!-- Party Selector -->
+      <div class="box" style="margin-bottom:18px">
+        <div class="box-head"><span>📋</span><div class="box-title">Customer Ledger</div></div>
+        <div class="box-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div class="f" style="flex:1;min-width:180px">
+              <label>Select Party *</label>
+              <select id="clParty" onchange="renderCustLedger()">
+                <option value="">— Choose Party —</option>
+              </select>
+            </div>
+            <button class="btn btn-blue" onclick="printCustLedger()">🖨️ Print Ledger</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Party Summary Cards -->
+      <div id="clSummary" style="display:none">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px" id="clCards"></div>
+
+        <!-- Printable Ledger -->
+        <div class="box" id="clLedgerBox">
+          <div class="box-head" style="justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:8px"><span>📒</span><div class="box-title" id="clLedgerTitle">Ledger</div></div>
+            <div style="font-family:var(--mono);font-size:.72rem;color:var(--gray-500)" id="clLedgerDate"></div>
+          </div>
+          <div class="box-body" style="padding:0">
+            <div style="overflow-x:auto">
+              <table id="clTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Bill No</th>
+                    <th>Bill Date</th>
+                    <th>Due Limit</th>
+                    <th>Due Amount</th>
+                    <th>Paid Amount</th>
+                    <th>Balance</th>
+                    <th>Payment Date</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="clBody"></tbody>
+                <tfoot id="clFoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="box" style="margin-top:18px" id="clHistBox">
+          <div class="box-head"><span>🕐</span><div class="box-title">Full Transaction History</div></div>
+          <div class="box-body" style="padding:0">
+            <div style="overflow-x:auto">
+              <table id="clHistTable">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Date</th><th>Bill No</th><th>Type</th><th>Amount</th><th>Mode</th><th>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody id="clHistBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div id="clEmpty" style="text-align:center;padding:48px;color:var(--gray-500);font-style:italic">
+        Select a party to view their full ledger
       </div>
     </div>
 
@@ -1256,6 +1344,7 @@ function switchSub(id, btn) {
   btn.classList.add('active');
   if (id === 'ledger') renderLedger('');
   if (id === 'tracker') renderTracker('all');
+  if (id === 'custledger') { populateCLParty(); renderCustLedger(); }
 }
 
 /* ── REFRESH ALL ── */
@@ -1267,6 +1356,8 @@ function refreshAll() {
   renderTracker('all');
   populatePayParty();
   populateRcptParty();
+  populateCLParty();
+  renderCustLedger();
 }
 
 /* ── SUMMARY CARDS ── */
@@ -2019,6 +2110,145 @@ function renderTracker(type) {
   }).join('');
 }
 
+/* ── CUSTOMER LEDGER ── */
+function populateCLParty() {
+  const sel = document.getElementById('clParty');
+  if (!sel) return;
+  const cur = sel.value;
+  const parties = [...new Set(entries.map(e => e.party))].sort();
+  sel.innerHTML = '<option value="">— Choose Party —</option>' +
+    parties.map(p => `<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
+}
+
+function renderCustLedger() {
+  const party = document.getElementById('clParty').value;
+  const summary = document.getElementById('clSummary');
+  const empty = document.getElementById('clEmpty');
+  if (!party) { summary.style.display='none'; empty.style.display='block'; return; }
+
+  const bills = entries.filter(e => e.party === party);
+  if (!bills.length) { summary.style.display='none'; empty.style.display='block'; empty.textContent='No entries found for this party.'; return; }
+
+  summary.style.display='block'; empty.style.display='none';
+
+  // Summary cards
+  const totDue = bills.reduce((s,e) => s + +e.amount, 0);
+  const totPaid = bills.reduce((s,e) => s + +e.paid, 0);
+  const totBal = totDue - totPaid;
+  const cPaid = bills.filter(e => (+e.amount-+e.paid)<=0).length;
+  const cOver = bills.filter(e => (+e.amount-+e.paid)>0 && diff(e.date)>e.dueDays).length;
+  const cPend = bills.filter(e => (+e.amount-+e.paid)>0 && diff(e.date)<=e.dueDays).length;
+
+  document.getElementById('clCards').innerHTML = `
+    <div class="cl-card"><div class="cl-card-label">Total Billed</div><div class="cl-card-val" style="color:var(--blue-800)">${fmt(totDue)}</div></div>
+    <div class="cl-card"><div class="cl-card-label">Total Collected</div><div class="cl-card-val" style="color:var(--green)">${fmt(totPaid)}</div></div>
+    <div class="cl-card"><div class="cl-card-label">Outstanding</div><div class="cl-card-val" style="color:${totBal>0?'var(--red)':'var(--green)'}">${fmt(totBal)}</div></div>
+    <div class="cl-card"><div class="cl-card-label">Bills</div><div class="cl-card-val" style="color:var(--blue-700)">${bills.length}</div><div style="font-size:.72rem;color:var(--gray-500);font-family:var(--mono);margin-top:3px">${cPaid} paid · ${cPend} pending · ${cOver} overdue</div></div>
+  `;
+
+  document.getElementById('clLedgerTitle').textContent = party + ' — Account Ledger';
+  document.getElementById('clLedgerDate').textContent = 'As of ' + new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+
+  // Bill-wise ledger table
+  const tbody = document.getElementById('clBody');
+  let runBal = 0;
+  tbody.innerHTML = bills.map((e, i) => {
+    const b = +e.amount - +e.paid;
+    const el = diff(e.date), ov = Math.max(0, el - e.dueDays);
+    const sc = b<=0?'b-paid':(ov>0?'b-overdue':'b-pending');
+    const sl = b<=0?'PAID':(ov>0?'OVERDUE':'PENDING');
+    const lastPay = e.payments && e.payments.length ? e.payments[e.payments.length-1] : null;
+    const payDate = lastPay ? lastPay.date : (e.paid>0 ? '—' : '—');
+    const payMode = lastPay ? (lastPay.mode||'Cash') : (e.paid>0 ? 'Cash' : '—');
+    runBal += b;
+    return `<tr>
+      <td style="color:var(--gray-500);font-size:.75rem">${i+1}</td>
+      <td class="b-no">${e.bill}</td>
+      <td style="font-family:var(--mono);font-size:.78rem">${e.date}</td>
+      <td style="font-family:var(--mono)">${e.dueDays}d${ov>0?` <span class="badge b-danger" style="font-size:.6rem">+${ov}d OD</span>`:''}</td>
+      <td class="mono c-red">${fmt(e.amount)}</td>
+      <td class="mono c-green">${fmt(e.paid)}</td>
+      <td class="mono ${b>0?'c-red':'c-green'}">${fmt(b)}</td>
+      <td style="font-family:var(--mono);font-size:.78rem">${payDate}</td>
+      <td style="font-size:.78rem">${payMode}</td>
+      <td><span class="badge ${sc}">${sl}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Footer totals
+  document.getElementById('clFoot').innerHTML = `<tr>
+    <td colspan="4" style="text-align:right">TOTAL</td>
+    <td class="mono c-red">${fmt(totDue)}</td>
+    <td class="mono c-green">${fmt(totPaid)}</td>
+    <td class="mono ${totBal>0?'c-red':'c-green'}">${fmt(totBal)}</td>
+    <td colspan="3"></td>
+  </tr>`;
+
+  // Full transaction history (chronological)
+  const txns = [];
+  bills.forEach(e => {
+    txns.push({ date: e.date, bill: e.bill, type: 'BILL', amount: +e.amount, mode: '—', remarks: e.remarks||'' });
+    if (e.payments && e.payments.length) {
+      e.payments.forEach(p => txns.push({ date: p.date||e.date, bill: e.bill, type: 'PAYMENT', amount: +p.amount, mode: p.mode||'Cash', remarks: '' }));
+    } else if (+e.paid > 0) {
+      txns.push({ date: e.date, bill: e.bill, type: 'PAYMENT', amount: +e.paid, mode: 'Cash', remarks: '' });
+    }
+  });
+  txns.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  document.getElementById('clHistBody').innerHTML = txns.map((t, i) => `<tr>
+    <td style="color:var(--gray-500);font-size:.75rem">${i+1}</td>
+    <td style="font-family:var(--mono);font-size:.78rem">${t.date}</td>
+    <td><span class="cl-txn-bill">${t.bill}</span></td>
+    <td><span class="${t.type==='BILL'?'cl-txn-due':'cl-txn-pay'}">${t.type}</span></td>
+    <td class="mono ${t.type==='BILL'?'c-red':'c-green'}">${fmt(t.amount)}</td>
+    <td style="font-size:.8rem">${t.mode}</td>
+    <td style="font-size:.78rem;color:var(--gray-500)">${t.remarks}</td>
+  </tr>`).join('');
+}
+
+function printCustLedger() {
+  const party = document.getElementById('clParty').value;
+  if (!party) { toast('Select a party first','err'); return; }
+  const box = document.getElementById('clLedgerBox');
+  const hist = document.getElementById('clHistBox');
+  const cards = document.getElementById('clCards');
+  const w = window.open('','_blank','width=900,height=900');
+  w.document.write(`<html><head><title>Ledger - ${party}</title>`);
+  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">');
+  w.document.write('<style>');
+  w.document.write('body{font-family:"Plus Jakarta Sans",sans-serif;margin:0;padding:24px;background:#fff;color:#0f172a}');
+  w.document.write(document.querySelector('style').textContent);
+  w.document.write('.box{border:1.5px solid #bfdbfe;border-radius:12px;overflow:hidden;margin-bottom:20px}');
+  w.document.write('.box-head{background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:12px 18px;display:flex;align-items:center;gap:8px}');
+  w.document.write('.box-title{font-size:.95rem;font-weight:700;color:#1e4db7}');
+  w.document.write('table{width:100%;border-collapse:collapse;font-size:.83rem}');
+  w.document.write('thead tr{background:#0c1e4a}th{padding:10px 12px;text-align:left;font-family:"JetBrains Mono",monospace;font-size:.63rem;letter-spacing:1px;color:rgba(255,255,255,.75);text-transform:uppercase}');
+  w.document.write('td{padding:10px 12px;border-top:1px solid #eff6ff;vertical-align:middle}');
+  w.document.write('tfoot td{padding:10px 12px;font-weight:800;font-family:"JetBrains Mono",monospace;background:#eff6ff;border-top:2px solid #bfdbfe}');
+  w.document.write('.print-header{background:linear-gradient(135deg,#1a3066,#1e4db7);color:#fff;padding:20px 28px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}');
+  w.document.write('.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}');
+  w.document.write('.cl-card{background:#fff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px}');
+  w.document.write('.cl-card-label{font-size:.63rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-family:"JetBrains Mono",monospace}');
+  w.document.write('.cl-card-val{font-size:1.3rem;font-weight:800;margin-top:4px}');
+  w.document.write('.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;font-family:"JetBrains Mono",monospace}');
+  w.document.write('.b-paid{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}.b-overdue{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}.b-pending{background:#fffbeb;color:#d97706;border:1px solid #fde68a}');
+  w.document.write('.mono{font-family:"JetBrains Mono",monospace;font-weight:600}.c-red{color:#dc2626}.c-green{color:#16a34a}.b-no{font-family:"JetBrains Mono",monospace;font-size:.8rem;color:#2563eb}');
+  w.document.write('.cl-txn-bill{background:#eff6ff;color:#1d4ed8;font-family:"JetBrains Mono",monospace;font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:5px}');
+  w.document.write('.cl-txn-due{background:#fef2f2;color:#dc2626;font-family:"JetBrains Mono",monospace;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:5px}');
+  w.document.write('.cl-txn-pay{background:#f0fdf4;color:#16a34a;font-family:"JetBrains Mono",monospace;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:5px}');
+  w.document.write('@media print{body{padding:12px}}</style></head><body>');
+  const now = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  w.document.write(`<div class="print-header"><div><div style="font-size:1.4rem;font-weight:800;letter-spacing:-.3px">Due<span style="color:#93c5fd">Ledger</span></div><div style="font-size:.65rem;color:rgba(255,255,255,.5);letter-spacing:1.5px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-top:2px">ACCOUNT LEDGER</div></div><div style="text-align:right"><div style="font-size:1.1rem;font-weight:800">${party}</div><div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:3px">${now}</div></div></div>`);
+  w.document.write('<div class="summary-grid">' + document.getElementById('clCards').innerHTML + '</div>');
+  w.document.write(box.outerHTML);
+  w.document.write(hist.outerHTML);
+  w.document.write('<div style="text-align:center;font-family:JetBrains Mono,monospace;font-size:.62rem;color:#94a3b8;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0">Generated by DueLedger · Due Maintenance Software · ' + new Date().toLocaleString('en-IN') + '</div>');
+  w.document.write('</body></html>');
+  w.document.close(); w.focus();
+  setTimeout(() => { w.print(); w.close(); }, 700);
+}
+
 /* ── INIT ── */
 try {
   document.getElementById('hDate').textContent =
@@ -2034,7 +2264,7 @@ try {
 
   // Initial render (data may update again once Firebase connects)
   updateSummary(); renderDashboard(); renderLedger(''); renderTracker('all');
-  populatePayParty(); populateRcptParty();
+  populatePayParty(); populateRcptParty(); populateCLParty();
 } catch(initErr) {
   console.error('[INIT] Error during page init:', initErr);
 }
