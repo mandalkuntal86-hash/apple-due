@@ -262,17 +262,6 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 .rcpt-bill-info.show{display:flex;}
 .rcpt-bil-field span{font-size:.65rem;font-family:var(--mono);color:var(--gray-500);letter-spacing:.8px;text-transform:uppercase;display:block;margin-bottom:2px;}
 
-/* ── MONTH REPORT ── */
-#mrMonthTable thead tr,#mrBillTable thead tr{background:var(--blue-900);}
-#mrMonthTable td,#mrBillTable td{padding:10px 13px;border-top:1px solid var(--blue-50);font-size:.85rem;vertical-align:middle;}
-#mrMonthTable tfoot td,#mrBillTable tfoot td{padding:11px 13px;font-weight:800;font-family:var(--mono);background:var(--blue-50);border-top:2px solid var(--blue-200);}
-#mrMonthTable tr:hover td,#mrBillTable tr:hover td{background:var(--blue-50);}
-.mr-month-row{cursor:pointer;}
-.mr-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--blue-100);box-shadow:var(--shadow-sm);padding:16px 18px;}
-.mr-card-label{font-size:.67rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gray-500);font-family:var(--mono);}
-.mr-card-val{font-size:1.5rem;font-weight:800;margin-top:4px;}
-.mr-card-sub{font-size:.72rem;color:var(--gray-500);font-family:var(--mono);margin-top:3px;}
-
 /* ── CUSTOMER LEDGER ── */
 .cl-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--blue-100);box-shadow:var(--shadow-sm);padding:16px 18px;}
 .cl-card-label{font-size:.67rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gray-500);font-family:var(--mono);}
@@ -2249,17 +2238,6 @@ function renderTracker(type) {
     </tr>`;
   }).join('');
 }
-
-/* ── MONTH REPORT ── */
-#mrMonthTable thead tr,#mrBillTable thead tr{background:var(--blue-900);}
-#mrMonthTable td,#mrBillTable td{padding:10px 13px;border-top:1px solid var(--blue-50);font-size:.85rem;vertical-align:middle;}
-#mrMonthTable tfoot td,#mrBillTable tfoot td{padding:11px 13px;font-weight:800;font-family:var(--mono);background:var(--blue-50);border-top:2px solid var(--blue-200);}
-#mrMonthTable tr:hover td,#mrBillTable tr:hover td{background:var(--blue-50);}
-.mr-month-row{cursor:pointer;}
-.mr-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--blue-100);box-shadow:var(--shadow-sm);padding:16px 18px;}
-.mr-card-label{font-size:.67rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gray-500);font-family:var(--mono);}
-.mr-card-val{font-size:1.5rem;font-weight:800;margin-top:4px;}
-.mr-card-sub{font-size:.72rem;color:var(--gray-500);font-family:var(--mono);margin-top:3px;}
 
 /* ── CUSTOMER LEDGER ── */
 function populateCLParty() {
