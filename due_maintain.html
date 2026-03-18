@@ -447,6 +447,30 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 <div class="tab-panel active" id="tab-dashboard">
   <div class="main">
 
+    <!-- Date Filter Bar -->
+    <div class="box" style="margin-bottom:18px">
+      <div class="box-body" style="padding:14px 20px">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <span style="font-size:.78rem;font-weight:700;color:var(--blue-800);font-family:var(--mono);letter-spacing:.5px;white-space:nowrap">📅 REPORT BY DATE</span>
+          <div class="pills" style="margin:0;flex-wrap:wrap;gap:6px">
+            <button class="pill active" id="dPillAll"    onclick="setDashPeriod('all',this)">All Time</button>
+            <button class="pill"        id="dPillToday"  onclick="setDashPeriod('today',this)">Today</button>
+            <button class="pill"        id="dPillWeek"   onclick="setDashPeriod('week',this)">This Week</button>
+            <button class="pill"        id="dPillMonth"  onclick="setDashPeriod('month',this)">This Month</button>
+            <button class="pill"        id="dPillQ"      onclick="setDashPeriod('quarter',this)">This Quarter</button>
+            <button class="pill"        id="dPillYear"   onclick="setDashPeriod('year',this)">This Year</button>
+            <button class="pill"        id="dPillCustom" onclick="setDashPeriod('custom',this)">Custom</button>
+          </div>
+          <div id="dCustomRange" style="display:none;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="dFrom" style="padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:var(--font);font-size:.82rem" onchange="renderDashboard()">
+            <span style="color:var(--gray-400);font-size:.8rem">to</span>
+            <input type="date" id="dTo"   style="padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:var(--font);font-size:.82rem" onchange="renderDashboard()">
+          </div>
+          <span id="dRangeLabel" style="font-family:var(--mono);font-size:.72rem;color:var(--blue-600);margin-left:auto"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- Overdue alert banner -->
     <div class="overdue-banner" id="overdueBanner">
       <div class="overdue-banner-icon">🚨</div>
@@ -906,14 +930,72 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 
     <!-- ── TRACKER ── -->
     <div class="sub-panel" id="sub-tracker">
-      <div class="pills">
-        <span style="font-family:var(--mono);font-size:.72rem;color:var(--gray-500);align-self:center">Filter :</span>
+
+      <!-- Status pills -->
+      <div class="pills" style="margin-bottom:14px">
+        <span style="font-family:var(--mono);font-size:.72rem;color:var(--gray-500);align-self:center">Status:</span>
         <button class="pill active" onclick="ft('all',this)">All</button>
         <button class="pill" onclick="ft('danger',this)">🔴 Overdue 30d+</button>
         <button class="pill" onclick="ft('warn',this)">🟡 15–30 Days</button>
         <button class="pill" onclick="ft('ok',this)">🟢 Within 15d</button>
         <button class="pill" onclick="ft('paid',this)">✅ Paid</button>
       </div>
+
+      <!-- Advanced filters -->
+      <div class="box" style="margin-bottom:16px">
+        <div class="box-head" style="cursor:pointer;justify-content:space-between" onclick="toggleTrackerFilters()">
+          <div style="display:flex;align-items:center;gap:8px"><span>🔍</span><div class="box-title">Advanced Filters</div><span id="tFilterBadge" style="display:none;background:var(--blue-600);color:#fff;font-size:.65rem;font-weight:700;font-family:var(--mono);padding:2px 8px;border-radius:10px;margin-left:4px"></span></div>
+          <span id="tFilterChevron" style="color:var(--gray-400);font-size:.85rem">▼</span>
+        </div>
+        <div id="tFilterBody" style="display:none">
+          <div class="box-body">
+            <div class="fg">
+              <div class="f">
+                <label>Search Party / Bill No</label>
+                <input type="text" id="tSrch" placeholder="Type to search…" oninput="renderTracker()">
+              </div>
+              <div class="f">
+                <label>Party</label>
+                <select id="tParty" onchange="renderTracker()">
+                  <option value="">— All Parties —</option>
+                </select>
+              </div>
+              <div class="f">
+                <label>Bill Date From</label>
+                <input type="date" id="tDateFrom" onchange="renderTracker()">
+              </div>
+              <div class="f">
+                <label>Bill Date To</label>
+                <input type="date" id="tDateTo" onchange="renderTracker()">
+              </div>
+              <div class="f">
+                <label>Min Balance (₹)</label>
+                <input type="number" id="tBalMin" placeholder="0" min="0" oninput="renderTracker()">
+              </div>
+              <div class="f">
+                <label>Max Balance (₹)</label>
+                <input type="number" id="tBalMax" placeholder="Any" min="0" oninput="renderTracker()">
+              </div>
+              <div class="f">
+                <label>Sort By</label>
+                <select id="tSort" onchange="renderTracker()">
+                  <option value="date_asc">Bill Date ↑ (Oldest first)</option>
+                  <option value="date_desc">Bill Date ↓ (Newest first)</option>
+                  <option value="bal_desc">Balance ↓ (Highest first)</option>
+                  <option value="bal_asc">Balance ↑ (Lowest first)</option>
+                  <option value="ov_desc">Overdue Days ↓</option>
+                  <option value="party_asc">Party A→Z</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm" onclick="clearTrackerFilters()">✕ Clear Filters</button>
+              <span id="tResultCount" style="font-family:var(--mono);font-size:.76rem;color:var(--gray-500);align-self:center"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="tbl-card">
         <div style="overflow-x:auto">
           <table>
@@ -1501,7 +1583,7 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
-  if (id === 'dashboard') renderDashboard();
+  if (id === 'dashboard') { renderDashboard(); updateSummary(); }
 }
 
 /* ── OTHERS SUB-TAB SWITCH ── */
@@ -1511,7 +1593,7 @@ function switchSub(id, btn) {
   document.getElementById('sub-' + id).classList.add('active');
   btn.classList.add('active');
   if (id === 'ledger') renderLedger('');
-  if (id === 'tracker') renderTracker('all');
+  if (id === 'tracker') { populateTrackerParty(); renderTracker(); }
   if (id === 'custledger') { populateCLParty(); renderCustLedger(); }
   if (id === 'monthreport') { populateMRFilters(); renderMonthReport(); }
 }
@@ -1522,7 +1604,7 @@ function refreshAll() {
   updateSummary();
   renderDashboard();
   renderLedger('');
-  renderTracker('all');
+  renderTracker();
   populatePayParty();
   populateRcptParty();
   populateCLParty();
@@ -1531,10 +1613,73 @@ function refreshAll() {
   renderMonthReport();
 }
 
+/* ── DASHBOARD DATE FILTER ── */
+let _dashPeriod = 'all';
+let _dashFrom   = '';
+let _dashTo     = '';
+
+function setDashPeriod(period, btn) {
+  _dashPeriod = period;
+  document.querySelectorAll('.pill[id^="dPill"]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const cr = document.getElementById('dCustomRange');
+  cr.style.display = period==='custom' ? 'flex' : 'none';
+  renderDashboard();
+  updateSummary();
+}
+
+function getDashEntries() {
+  const now   = new Date(); now.setHours(0,0,0,0);
+  const yStr  = d => d.toISOString().split('T')[0];
+  let from='', to='';
+  if (_dashPeriod==='today') {
+    from=to=yStr(now);
+  } else if (_dashPeriod==='week') {
+    const d=new Date(now); d.setDate(d.getDate()-d.getDay()+1);
+    from=yStr(d); to=yStr(now);
+  } else if (_dashPeriod==='month') {
+    from=yStr(new Date(now.getFullYear(),now.getMonth(),1)); to=yStr(now);
+  } else if (_dashPeriod==='quarter') {
+    const q=Math.floor(now.getMonth()/3);
+    from=yStr(new Date(now.getFullYear(),q*3,1)); to=yStr(now);
+  } else if (_dashPeriod==='year') {
+    from=yStr(new Date(now.getFullYear(),0,1)); to=yStr(now);
+  } else if (_dashPeriod==='custom') {
+    from=document.getElementById('dFrom')?.value||'';
+    to  =document.getElementById('dTo')?.value||'';
+  }
+  _dashFrom=from; _dashTo=to;
+  // Update range label
+  const lbl=document.getElementById('dRangeLabel');
+  if (lbl) {
+    if (from||to) lbl.textContent=(from||'…')+' → '+(to||'…');
+    else lbl.textContent='';
+  }
+  if (!from && !to) return [...entries];
+  return entries.filter(e=>{
+    const nd=normD(e.date);
+    if (from && nd < from) return false;
+    if (to   && nd > to)   return false;
+    return true;
+  });
+}
+
+// Quick date normalizer (reuse pattern from renderMonthReport)
+function normD(d){
+  if(!d) return '';
+  const s=String(d).trim();
+  const m1=s.match(/^(\d{1,2})[\-\/.](\d{1,2})[\-\/.](\d{4})$/);
+  const m2=s.match(/^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})$/);
+  if(m1) return m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
+  if(m2) return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');
+  return s;
+}
+
 /* ── SUMMARY CARDS ── */
 function updateSummary() {
+  const data = getDashEntries();
   let tDue=0,tPaid=0,pend=0,sett=0,over=0;
-  entries.forEach(e => {
+  data.forEach(e => {
     tDue += +e.amount; tPaid += +e.paid;
     const b = +e.amount - +e.paid;
     b > 0 ? pend++ : sett++;
@@ -1544,14 +1689,15 @@ function updateSummary() {
   document.getElementById('sPaid').textContent = fmt(tPaid);
   document.getElementById('sBal').textContent  = fmt(tDue - tPaid);
   document.getElementById('sOver').textContent = over;
-  document.getElementById('sDueSub').textContent  = entries.length + ' total bills';
+  document.getElementById('sDueSub').textContent  = data.length + ' total bills';
   document.getElementById('sPaidSub').textContent = sett + ' settled';
 }
 
 /* ── DASHBOARD ── */
 function renderDashboard() {
+  const data = getDashEntries();
   let tDue=0,tPaid=0,tBal=0,cPaid=0,cPend=0,cOver=0;
-  entries.forEach(e => {
+  data.forEach(e => {
     tDue += +e.amount; tPaid += +e.paid;
     const b = +e.amount - +e.paid;
     tBal += b;
@@ -1561,8 +1707,8 @@ function renderDashboard() {
   });
   const total = tDue || 1;
   const pPaid = Math.round(tPaid / total * 100);
-  const pPend = Math.round((tBal - entries.filter(e=>diff(e.date)>e.dueDays&&(+e.amount-+e.paid)>0).reduce((s,e)=>s+(+e.amount-+e.paid),0)) / total * 100);
-  const overdueAmt = entries.filter(e=>diff(e.date)>e.dueDays&&(+e.amount-+e.paid)>0).reduce((s,e)=>s+(+e.amount-+e.paid),0);
+  const pPend = Math.round((tBal - data.filter(e=>diff(e.date)>e.dueDays&&(+e.amount-+e.paid)>0).reduce((s,e)=>s+(+e.amount-+e.paid),0)) / total * 100);
+  const overdueAmt = data.filter(e=>diff(e.date)>e.dueDays&&(+e.amount-+e.paid)>0).reduce((s,e)=>s+(+e.amount-+e.paid),0);
   const pOver = Math.round(overdueAmt / total * 100);
 
   document.getElementById('pctPaid').textContent = pPaid + '%';
@@ -1587,7 +1733,7 @@ function renderDashboard() {
 
   // Top due parties
   const partyMap = {};
-  entries.forEach(e => {
+  data.forEach(e => {
     const b = +e.amount - +e.paid;
     if (b > 0) {
       if (!partyMap[e.party]) partyMap[e.party] = { bal:0, bills:0, overdue:0 };
@@ -1612,7 +1758,7 @@ function renderDashboard() {
     </div>`).join('');
 
   // Recent entries
-  const recent = [...entries].reverse().slice(0,5);
+  const recent = [...data].reverse().slice(0,5);
   const rl = document.getElementById('recentList');
   if (!recent.length) { rl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray-500);font-style:italic">No entries yet</div>'; }
   else rl.innerHTML = recent.map(e => {
@@ -1632,7 +1778,7 @@ function renderDashboard() {
   }).join('');
 
   // Critical overdue
-  const critical = entries.filter(e => diff(e.date) > e.dueDays && (+e.amount-+e.paid)>0)
+  const critical = data.filter(e => diff(e.date) > e.dueDays && (+e.amount-+e.paid)>0)
     .sort((a,b) => (+b.amount-+b.paid)-(+a.amount-+a.paid)).slice(0,5);
   const cl = document.getElementById('criticalList');
   if (!critical.length) { cl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray-500);font-style:italic">No overdue bills 🎉</div>'; }
@@ -1654,9 +1800,11 @@ function renderDashboard() {
   // Also update tab badge
   const btn = document.getElementById('othersTabBtn');
   const oBadge = btn.querySelector('.tab-badge');
-  if (cOver > 0) {
-    if (!oBadge) btn.insertAdjacentHTML('beforeend', `<span class="tab-badge">${cOver}</span>`);
-    else oBadge.textContent = cOver;
+  // Badge always shows total overdue, not filtered
+  const totalOver = entries.filter(e=>diff(e.date)>e.dueDays&&(+e.amount-+e.paid)>0).length;
+  if (totalOver > 0) {
+    if (!oBadge) btn.insertAdjacentHTML('beforeend', `<span class="tab-badge">${totalOver}</span>`);
+    else oBadge.textContent = totalOver;
   } else { if (oBadge) oBadge.remove(); }
 }
 
@@ -2326,26 +2474,93 @@ function printReceipt() {
 }
 
 /* ── TRACKER ── */
+let _trackerStatus = 'all';
+
 function ft(type, btn) {
   document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  renderTracker(type);
+  _trackerStatus = type;
+  renderTracker();
 }
-function renderTracker(type) {
-  const tbody=document.getElementById('tBody');
-  let list=[...entries];
+
+function toggleTrackerFilters() {
+  const body = document.getElementById('tFilterBody');
+  const chev = document.getElementById('tFilterChevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chev.textContent = open ? '▼' : '▲';
+  if (!open) populateTrackerParty();
+}
+
+function populateTrackerParty() {
+  const sel = document.getElementById('tParty');
+  if (!sel) return;
+  const cur = sel.value;
+  const parties = [...new Set(entries.map(e=>e.party))].sort();
+  sel.innerHTML = '<option value="">— All Parties —</option>' +
+    parties.map(p=>`<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
+}
+
+function clearTrackerFilters() {
+  ['tSrch','tDateFrom','tDateTo','tBalMin','tBalMax'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  const ts=document.getElementById('tSort'); if(ts) ts.value='date_asc';
+  const tp=document.getElementById('tParty'); if(tp) tp.value='';
+  renderTracker();
+}
+
+function renderTracker() {
+  const tbody = document.getElementById('tBody');
+  const srch    = (document.getElementById('tSrch')?.value||'').toLowerCase().trim();
+  const party   = document.getElementById('tParty')?.value||'';
+  const dateFrom= document.getElementById('tDateFrom')?.value||'';
+  const dateTo  = document.getElementById('tDateTo')?.value||'';
+  const balMin  = parseFloat(document.getElementById('tBalMin')?.value)||0;
+  const balMax  = parseFloat(document.getElementById('tBalMax')?.value)||0;
+  const sortBy  = document.getElementById('tSort')?.value||'date_asc';
+  const type    = _trackerStatus;
+
+  let list = [...entries];
+
+  // Status pill filter
   if (type==='danger') list=list.filter(e=>diff(e.date)>e.dueDays&&(+e.amount-+e.paid)>0);
   else if(type==='warn') list=list.filter(e=>{const r=e.dueDays-diff(e.date);return r>=0&&r<=15&&(+e.amount-+e.paid)>0;});
   else if(type==='ok')   list=list.filter(e=>{const r=e.dueDays-diff(e.date);return r>15&&(+e.amount-+e.paid)>0;});
   else if(type==='paid') list=list.filter(e=>(+e.amount-+e.paid)<=0);
-  if (!list.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="8">No entries in this category.</td></tr>'; return; }
+
+  // Advanced filters
+  if (srch)    list=list.filter(e=>e.party.toLowerCase().includes(srch)||e.bill.toLowerCase().includes(srch));
+  if (party)   list=list.filter(e=>e.party===party);
+  if (dateFrom) list=list.filter(e=>e.date>=dateFrom);
+  if (dateTo)   list=list.filter(e=>e.date<=dateTo);
+  if (balMin>0) list=list.filter(e=>(+e.amount-+e.paid)>=balMin);
+  if (balMax>0) list=list.filter(e=>(+e.amount-+e.paid)<=balMax);
+
+  // Sort
+  list.sort((a,b)=>{
+    if(sortBy==='date_asc')  return a.date.localeCompare(b.date);
+    if(sortBy==='date_desc') return b.date.localeCompare(a.date);
+    if(sortBy==='bal_desc')  return (+b.amount-+b.paid)-(+a.amount-+a.paid);
+    if(sortBy==='bal_asc')   return (+a.amount-+a.paid)-(+b.amount-+b.paid);
+    if(sortBy==='ov_desc')   return Math.max(0,diff(b.date)-b.dueDays)-Math.max(0,diff(a.date)-a.dueDays);
+    if(sortBy==='party_asc') return a.party.localeCompare(b.party);
+    return 0;
+  });
+
+  // Update result count & filter badge
+  const rc = document.getElementById('tResultCount');
+  if(rc) rc.textContent = list.length + ' of ' + entries.length + ' bills';
+  const activeFilters = [srch,party,dateFrom,dateTo,balMin>0?balMin:'',balMax>0?balMax:''].filter(Boolean).length;
+  const badge = document.getElementById('tFilterBadge');
+  if(badge) { badge.style.display=activeFilters?'inline':'none'; badge.textContent=activeFilters+' filter'+(activeFilters>1?'s':''); }
+
+  if (!list.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="8">No entries match your filters.</td></tr>'; return; }
   tbody.innerHTML=list.map((e,i)=>{
     const b=+e.amount-+e.paid, el=diff(e.date), ov=Math.max(0,el-e.dueDays);
     const sc=b<=0?'b-paid':(ov>0?'b-overdue':'b-pending');
     const sl=b<=0?'PAID':(ov>0?'OVERDUE':'PENDING');
-    const ovCell = b<=0
-      ? '<span class="badge b-ok">—</span>'
-      : (ov>0 ? `<span class="badge b-danger">+${ov}d</span>` : '<span class="badge b-ok">On Time</span>');
+    const ovCell=b<=0?'<span class="badge b-ok">—</span>':(ov>0?`<span class="badge b-danger">+${ov}d</span>`:'<span class="badge b-ok">On Time</span>');
     return `<tr>
       <td style="color:var(--gray-500);font-size:.76rem">${i+1}</td>
       <td class="p-name">${e.party}</td>
