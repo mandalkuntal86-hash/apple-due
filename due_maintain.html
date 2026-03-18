@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DueLedger — Due Maintenance Software</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<title>Apple Resale & Card Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- Firebase SDK (compat - works reliably in plain HTML files) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -27,7 +27,7 @@
   --shadow-sm:0 1px 3px rgba(30,77,183,.08),0 1px 2px rgba(30,77,183,.06);
   --shadow:0 4px 16px rgba(30,77,183,.10),0 1px 4px rgba(30,77,183,.06);
   --shadow-lg:0 10px 40px rgba(30,77,183,.14),0 4px 12px rgba(30,77,183,.08);
-  --radius:12px; --font:'Plus Jakarta Sans',sans-serif; --mono:'JetBrains Mono',monospace;
+  --radius:10px; --font:'Inter',system-ui,-apple-system,sans-serif; --mono:'DM Mono','Courier New',monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--font);background:var(--gray-50);color:var(--gray-900);min-height:100vh;}
@@ -204,7 +204,7 @@ select option{background:var(--white);}
 .f-actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
 
 /* ── TABLES ── */
-.tbl-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--blue-100);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:26px;}
+.tbl-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--blue-100);box-shadow:var(--shadow-sm);overflow-x:auto;margin-bottom:26px;-webkit-overflow-scrolling:touch;}
 .tbl-top{padding:14px 20px;background:linear-gradient(90deg,var(--blue-50),var(--white));border-bottom:1px solid var(--blue-100);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
 .tbl-title{font-size:.95rem;font-weight:700;color:var(--blue-800);}
 .srch{background:var(--white);border:1.5px solid var(--gray-200);border-radius:8px;padding:7px 12px;font-family:var(--font);font-size:.83rem;color:var(--gray-900);outline:none;width:200px;transition:border-color .2s;}
@@ -435,7 +435,146 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 .conn-indicator.off { background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd); }
 .conn-dot { width:7px;height:7px;border-radius:50%;background:currentColor; }
 
-@media(max-width:600px){header{padding:0 14px;}.tab-bar{padding:0 12px;}.tab-btn{padding:14px 12px;font-size:.78rem;}.main{padding:16px 12px;}.summary-grid{grid-template-columns:1fr 1fr;}}
+/* mobile styles moved to 768px breakpoint above */
+
+/* ══════════════════════════════════════════════
+   MOBILE RESPONSIVE — ≤768px
+══════════════════════════════════════════════ */
+@media(max-width:768px){
+
+  /* Header */
+  header{padding:0 14px;height:56px;}
+  .logo-name{font-size:1.05rem;}
+  .logo-sub{display:none;}
+  .header-date{display:none;}
+  #authBadgeWrap{gap:5px;}
+  #authBadge{font-size:.62rem;padding:2px 8px;}
+  #logoutBtn{font-size:.62rem;padding:2px 8px;}
+
+  /* Tab bar — scrollable */
+  .tab-bar{
+    padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;gap:0;flex-wrap:nowrap;
+    position:sticky;top:56px;
+  }
+  .tab-bar::-webkit-scrollbar{display:none;}
+  .tab-btn{padding:12px 12px;font-size:.75rem;white-space:nowrap;flex-shrink:0;}
+
+  /* Sub-tab bar — scrollable */
+  .sub-tab-bar{
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;flex-wrap:nowrap;padding:0 6px;
+  }
+  .sub-tab-bar::-webkit-scrollbar{display:none;}
+  .sub-tab{padding:10px 12px;font-size:.72rem;white-space:nowrap;flex-shrink:0;}
+
+  /* Main content */
+  .main{padding:14px 10px;}
+
+  /* Summary grid — 2 col on mobile */
+  .summary-grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+  .s-value{font-size:1.4rem;}
+  .s-card{padding:14px 14px;}
+
+  /* Dash grid — stack */
+  .dash-grid{grid-template-columns:1fr;gap:14px;}
+  .two-col{grid-template-columns:1fr;}
+
+  /* Form grid — single column */
+  .fg{grid-template-columns:1fr!important;}
+  .f[style*="grid-column"]{grid-column:1!important;}
+
+  /* Tables — horizontal scroll */
+  .tbl-card{overflow-x:auto;}
+  table{font-size:.75rem;min-width:520px;}
+  th,td{padding:8px 8px;}
+  .tbl-top{flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px;}
+  .srch{width:100%;}
+
+  /* Box */
+  .box-body{padding:14px 12px;}
+  .box-head{padding:10px 14px;}
+
+  /* Buttons */
+  .f-actions{flex-wrap:wrap;}
+  .btn{padding:8px 14px;font-size:.82rem;}
+  .btn-sm{padding:4px 10px;font-size:.72rem;}
+
+  /* Bills payment cards */
+  .bill-pay-card .bpc-header{flex-wrap:wrap;}
+  .bpc-amounts{flex-direction:column;gap:2px;}
+
+  /* Receipt */
+  .rcpt-paper{border-radius:10px;}
+  .rcpt-header-bar{padding:16px 16px;}
+  .rcpt-body{padding:16px 16px;}
+  .rcpt-footer{padding:10px 16px;}
+  .rcpt-selector{flex-direction:column;}
+
+  /* Modal */
+  .modal{padding:18px 16px;margin:10px;}
+  .overlay{padding:10px;}
+
+  /* Summary cards — CC */
+  #ccdCards{grid-template-columns:1fr 1fr;}
+
+  /* Pills — scrollable row */
+  .pills{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;padding-bottom:4px;}
+  .pills::-webkit-scrollbar{display:none;}
+  .pill{white-space:nowrap;flex-shrink:0;}
+
+  /* Date filter bars */
+  .box-body .pills{gap:5px;}
+
+  /* Stat bars */
+  .stat-bar-wrap{margin-bottom:12px;}
+
+  /* Party due rows */
+  .party-due-row{padding:8px 10px;}
+  .party-due-bal{font-size:.82rem;}
+
+  /* Recent rows */
+  .recent-row{padding:8px 10px;}
+
+  /* Auth box */
+  .auth-box{padding:24px 20px;margin:16px;}
+
+  /* Overdue banner */
+  .overdue-banner{padding:12px 14px;}
+
+  /* Due tracker pills */
+  #sub-tracker .pills{margin-bottom:10px;}
+
+  /* Tracker filter box */
+  #tFilterBody .fg{grid-template-columns:1fr;}
+
+  /* CC ledger tables */
+  #ccLedgerContent .tbl-card{overflow-x:auto;}
+
+  /* Sub-panel spacing */
+  .sub-panel{padding-top:4px;}
+
+  /* mr-card grid */
+  #mrCards,#ccCommCards,#ccSumCards,#ccdCards,#ccLedgerCards{
+    grid-template-columns:1fr 1fr!important;
+    gap:10px;
+  }
+
+  /* Footer */
+  footer,div[style*="Developed by"]{padding:12px 16px;font-size:.72rem;}
+}
+
+/* ── Extra small ≤ 400px ── */
+@media(max-width:400px){
+  .summary-grid{grid-template-columns:1fr;}
+  #ccdCards{grid-template-columns:1fr;}
+  #mrCards,#ccCommCards,#ccSumCards,#ccLedgerCards{grid-template-columns:1fr!important;}
+  .s-value{font-size:1.2rem;}
+  .tab-btn{padding:10px 10px;font-size:.7rem;}
+  .sub-tab{padding:8px 10px;font-size:.68rem;}
+  table{min-width:420px;font-size:.7rem;}
+  th,td{padding:6px 6px;}
+}
 </style>
 </head>
 <body>
@@ -443,8 +582,8 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 <!-- LOGIN OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-box">
-    <div class="auth-logo">Due<span>Ledger</span></div>
-    <div class="auth-sub">Due Maintenance Software</div>
+    <div class="auth-logo">Apple Resale<span> & Card</span></div>
+    <div class="auth-sub">Apple Resale & Card Management</div>
     <div class="auth-field">
       <label>User ID</label>
       <input type="text" id="authUser" placeholder="Enter user ID" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('authPass').focus()">
@@ -462,11 +601,19 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 <!-- HEADER -->
 <header>
   <div class="logo">
-    <div class="logo-icon">📒</div>
-    <div>
-      <div class="logo-name">Due<span>Ledger</span></div>
-      <div class="logo-sub">Due Maintenance Software</div>
-    </div>
+    <svg height="38" viewBox="0 0 260 70" xmlns="http://www.w3.org/2000/svg">
+      <!-- Shadow fold bottom -->
+      <polygon points="0,60 30,70 30,60" fill="#8b0000" opacity="0.6"/>
+      <!-- Left arrow point -->
+      <polygon points="0,10 0,60 30,70 30,10" fill="#a00000"/>
+      <!-- Main ribbon body -->
+      <rect x="28" y="0" width="232" height="55" rx="2" fill="#cc0000"/>
+      <!-- Bottom fold triangle -->
+      <polygon points="28,55 58,70 58,55" fill="#900000"/>
+      <!-- RESALE text -->
+      <text x="144" y="39" font-family="Inter,system-ui,sans-serif" font-size="28" font-weight="800"
+            fill="white" text-anchor="middle" letter-spacing="4">RESALE</text>
+    </svg>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
     <button class="conn-indicator off" id="connIndicator" onclick="connIndicatorClick()" title="Click to reconnect or configure Firebase">
@@ -483,8 +630,9 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 
 <!-- TAB BAR -->
 <div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
-  <button class="tab-btn" onclick="switchTab('others',this)" id="othersTabBtn">⚙️ Others</button>
+  <button class="tab-btn active" onclick="switchTab('dashboard',this)">Resale Dashboard</button>
+  <button class="tab-btn" onclick="switchTab('others',this)" id="othersTabBtn">📦 Resale Entry & Report</button>
+  <button class="tab-btn" onclick="switchTab('cc',this)" id="ccTabBtn">💳 Credit Card</button>
 </div>
 
 <!-- ═══════════════════════════════ DASHBOARD TAB ═══════════════════════════════ -->
@@ -727,7 +875,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
           </div>
           <!-- Bills preview -->
           <div style="font-size:.8rem;font-weight:700;color:var(--blue-700);font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">📋 Bills</div>
-          <div class="bulk-preview">
+          <div class="bulk-preview" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
             <table id="bulkTable">
               <thead>
                 <tr>
@@ -741,7 +889,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
           <!-- Payments preview (hidden until payments sheet found) -->
           <div id="bulkPayTableWrap" style="display:none;margin-top:18px">
             <div style="font-size:.8rem;font-weight:700;color:var(--blue-700);font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">💳 Payments (Multiple Receipts)</div>
-            <div class="bulk-preview">
+            <div class="bulk-preview" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
               <table>
                 <thead>
                   <tr><th>#</th><th>Party Name</th><th>Bill Date</th><th>Bill No</th><th>Payment Date</th><th>Amount</th><th>Mode</th><th>Remarks</th><th>Bill Source</th><th>Status</th></tr>
@@ -911,7 +1059,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
             <div class="rcpt-paper">
               <div class="rcpt-header-bar">
                 <div>
-                  <div class="rcpt-logo-big">Due<span>Ledger</span></div>
+                  <div class="rcpt-logo-big">Apple <span>Resale</span></div>
                   <div class="rcpt-logo-sub">Official Bill Receipt</div>
                 </div>
                 <div class="rcpt-no-box">
@@ -941,7 +1089,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
                 <div class="rcpt-status-row"><span class="rcpt-status-chip" id="riStatusChip">—</span></div>
                 <div class="rcpt-payments" id="riPayHist"></div>
               </div>
-              <div class="rcpt-footer">Generated by DueLedger · Developed by Kuntal Mandal · <span id="riFooterDate"></span></div>
+              <div class="rcpt-footer">Generated by Apple Resale & Card Management · Developed by Kuntal Mandal · <span id="riFooterDate"></span></div>
             </div>
             <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <button class="btn btn-blue" onclick="printReceipt()">🖨️ Print Receipt</button>
@@ -1276,7 +1424,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
   <div class="modal" style="max-width:420px;text-align:center">
     <div style="font-size:3rem;margin-bottom:12px">⚠️</div>
     <div class="modal-title" style="text-align:center;color:var(--red)">Clear All Data?</div>
-    <p style="color:var(--gray-500);font-size:.88rem;margin-bottom:8px">This will permanently delete <strong id="clearCount">all</strong> entries from DueLedger.</p>
+    <p style="color:var(--gray-500);font-size:.88rem;margin-bottom:8px">This will permanently delete <strong id="clearCount">all</strong> entries from Apple Resale & Card Management.</p>
     <p style="color:var(--red);font-size:.82rem;font-family:var(--mono);background:var(--red-bg);border:1px solid var(--red-bd);border-radius:7px;padding:8px 12px;margin-bottom:20px">This action cannot be undone!</p>
     <div style="display:flex;gap:10px;justify-content:center">
       <button class="btn btn-red admin-only" onclick="confirmClearAll()" style="padding:10px 28px">🗑️ Yes, Delete All</button>
@@ -1293,7 +1441,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
       <div class="fb-setup-logo">🔥</div>
       <div>
         <div class="fb-setup-title">Firebase Connection Setup</div>
-        <div class="fb-setup-subtitle">Connect DueLedger to Firebase Realtime Database</div>
+        <div class="fb-setup-subtitle">Connect Apple Resale & Card Management to Firebase Realtime Database</div>
       </div>
     </div>
     <div class="fb-setup-body">
@@ -1340,6 +1488,291 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
         Config is saved in browser — you only need to enter it once
       </div>
     </div>
+  </div>
+</div>
+
+
+
+<!-- ═══════════════════════════════ CREDIT CARD TAB ═══════════════════════════════ -->
+<div class="tab-panel" id="tab-cc">
+  <div class="main">
+
+    <!-- Sub-tabs -->
+    <div class="sub-tab-bar">
+      <button class="sub-tab active" onclick="ccSub('cc-dash',this)">📊 Dashboard</button>
+      <button class="sub-tab admin-only" onclick="ccSub('cc-txn',this)">➕ Add Transaction</button>
+      <button class="sub-tab admin-only" onclick="ccSub('cc-pay',this)">💸 Record Payment</button>
+      <button class="sub-tab" onclick="ccSub('cc-commission',this)">📊 Commission</button>
+      <button class="sub-tab" onclick="ccSub('cc-ledger',this)">📒 Party Ledger</button>
+      <button class="sub-tab" onclick="ccSub('cc-summary',this)">📋 Summary</button>
+    </div>
+
+    <!-- ── CC DASHBOARD ── -->
+    <div class="sub-panel active" id="cc-dash">
+
+      <!-- Date filter bar -->
+      <div class="box" style="margin-bottom:18px">
+        <div class="box-body" style="padding:14px 20px">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <span style="font-size:.78rem;font-weight:700;color:var(--blue-800);font-family:var(--mono);letter-spacing:.5px;white-space:nowrap">📅 PERIOD</span>
+            <div class="pills" style="margin:0;gap:6px;flex-wrap:wrap">
+              <button class="pill active" id="ccdPillAll"     onclick="setCCDashPeriod('all',this)">All Time</button>
+              <button class="pill"        id="ccdPillToday"   onclick="setCCDashPeriod('today',this)">Today</button>
+              <button class="pill"        id="ccdPillWeek"    onclick="setCCDashPeriod('week',this)">This Week</button>
+              <button class="pill"        id="ccdPillMonth"   onclick="setCCDashPeriod('month',this)">This Month</button>
+              <button class="pill"        id="ccdPillYear"    onclick="setCCDashPeriod('year',this)">This Year</button>
+              <button class="pill"        id="ccdPillCustom"  onclick="setCCDashPeriod('custom',this)">Custom</button>
+            </div>
+            <div id="ccdCustomRange" style="display:none;gap:8px;align-items:center;flex-wrap:wrap">
+              <input type="date" id="ccdFrom" style="padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:var(--font);font-size:.82rem" onchange="renderCCDash()">
+              <span style="color:var(--gray-400);font-size:.8rem">to</span>
+              <input type="date" id="ccdTo" style="padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:var(--font);font-size:.82rem" onchange="renderCCDash()">
+            </div>
+            <span id="ccdRangeLabel" style="font-family:var(--mono);font-size:.72rem;color:var(--blue-600);margin-left:auto"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary cards -->
+      <div id="ccdCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px"></div>
+
+      <!-- Two col grid -->
+      <div class="dash-grid" style="margin-bottom:22px">
+
+        <!-- Top parties by balance -->
+        <div class="box">
+          <div class="box-head"><span>👥</span><div class="box-title">Top Pending Parties</div></div>
+          <div class="box-body">
+            <div id="ccdTopParties">
+              <div style="text-align:center;padding:24px;color:var(--gray-500);font-style:italic">No data yet</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Commission breakdown bar -->
+        <div class="box">
+          <div class="box-head"><span>📈</span><div class="box-title">Commission Overview</div></div>
+          <div class="box-body">
+            <div class="stat-bar-wrap">
+              <div class="stat-bar-label"><span>Commission Collected</span><span id="ccdPctCollected">0%</span></div>
+              <div class="stat-bar-track"><div class="stat-bar-fill" id="ccdBarCollected" style="background:var(--green);width:0%"></div></div>
+            </div>
+            <div class="stat-bar-wrap">
+              <div class="stat-bar-label"><span>Commission Pending</span><span id="ccdPctPending">0%</span></div>
+              <div class="stat-bar-track"><div class="stat-bar-fill" id="ccdBarPending" style="background:var(--red);width:0%"></div></div>
+            </div>
+            <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center">
+              <div style="background:var(--green-bg);border:1px solid var(--green-bd);border-radius:9px;padding:14px 8px">
+                <div style="font-size:1.1rem;font-weight:800;color:var(--green)" id="ccdTotalComm">₹0</div>
+                <div style="font-size:.68rem;color:var(--gray-500);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-top:3px">Total Commission</div>
+              </div>
+              <div style="background:var(--red-bg);border:1px solid var(--red-bd);border-radius:9px;padding:14px 8px">
+                <div style="font-size:1.1rem;font-weight:800;color:var(--red)" id="ccdTotalBal">₹0</div>
+                <div style="font-size:.68rem;color:var(--gray-500);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-top:3px">Balance Due</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Recent transactions -->
+      <div class="dash-grid">
+        <div class="box">
+          <div class="box-head"><span>🕐</span><div class="box-title">Recent Transactions</div></div>
+          <div class="box-body">
+            <div id="ccdRecentTxn">
+              <div style="text-align:center;padding:24px;color:var(--gray-500);font-style:italic">No transactions yet</div>
+            </div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-head"><span>💸</span><div class="box-title">Recent Payments</div></div>
+          <div class="box-body">
+            <div id="ccdRecentPay">
+              <div style="text-align:center;padding:24px;color:var(--gray-500);font-style:italic">No payments yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── ADD TRANSACTION ── -->
+    <div class="sub-panel" id="cc-txn">
+      <div class="box">
+        <div class="box-head"><span>➕</span><div class="box-title">Add Credit Card Transaction</div></div>
+        <div class="box-body">
+          <div class="fg">
+            <div class="f"><label>Party Name *</label><input type="text" id="ccTxnParty" placeholder="e.g. Sharma Traders" list="ccPartyList"><datalist id="ccPartyList"></datalist></div>
+            <div class="f"><label>Card Number (Last 4 digits)</label><input type="text" id="ccTxnCard" placeholder="e.g. 4521" maxlength="4"></div>
+            <div class="f"><label>Transaction Date *</label><input type="date" id="ccTxnDate"></div>
+            <div class="f"><label>Transaction Amount (₹) *</label><input type="number" id="ccTxnAmt" placeholder="0.00" min="0"></div>
+            <div class="f"><label>Rent % (Commission)</label><input type="number" id="ccTxnRent" placeholder="e.g. 1.5" step="0.01" min="0"></div>
+            <div class="f"><label>Remarks</label><input type="text" id="ccTxnRem" placeholder="Optional note…"></div>
+          </div>
+          <div class="f-actions" style="margin-top:14px">
+            <button class="btn btn-blue admin-only" onclick="addCCTxn()">➕ Add Transaction</button>
+          </div>
+          <div id="ccTxnSuccess" style="display:none;margin-top:14px;background:var(--green-bg);border:1.5px solid var(--green-bd);border-radius:10px;padding:14px 16px">
+            <div style="font-weight:800;color:var(--green);font-size:.9rem" id="ccTxnSuccessText">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Party Commission Settings -->
+      <div class="box" style="margin-top:18px">
+        <div class="box-head" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px"><span>⚙️</span><div class="box-title">Party Commission % Settings</div></div>
+        </div>
+        <div class="box-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+            <div class="f" style="flex:1;min-width:160px"><label>Party Name *</label><input type="text" id="ccCommParty" placeholder="Party name" list="ccPartyList2"><datalist id="ccPartyList2"></datalist></div>
+            <div class="f" style="width:140px"><label>Commission % *</label><input type="number" id="ccCommPct" placeholder="e.g. 1.5" step="0.01" min="0"></div>
+            <button class="btn btn-blue btn-sm admin-only" onclick="saveCCCommission()" style="margin-bottom:1px">💾 Save</button>
+          </div>
+          <div id="ccCommTable" style="overflow-x:auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RECORD PAYMENT ── -->
+    <div class="sub-panel" id="cc-pay">
+
+      <!-- Transaction Payment -->
+      <div class="box" style="margin-bottom:18px">
+        <div class="box-head"><span>💳</span><div class="box-title">Transaction Payment — Received from Party</div></div>
+        <div class="box-body">
+          <p style="font-size:.78rem;color:var(--gray-500);margin-bottom:14px;font-family:var(--mono)">Record the actual CC transaction amount received/settled from party.</p>
+          <div class="fg">
+            <div class="f"><label>Party Name *</label><select id="ccTxnPayParty" onchange="ccTxnPayPartyChange()"><option value="">— Choose Party —</option></select></div>
+            <div class="f"><label>Payment Date *</label><input type="date" id="ccTxnPayDate"></div>
+            <div class="f"><label>Amount (₹) *</label><input type="number" id="ccTxnPayAmt" placeholder="0.00" min="0"></div>
+            <div class="f"><label>Payment Mode</label><select id="ccTxnPayMode"><option>Cash</option><option>UPI</option><option>NEFT/RTGS</option><option>Cheque</option><option>Other</option></select></div>
+            <div class="f" style="grid-column:1/-1"><label>Remarks</label><input type="text" id="ccTxnPayRem" placeholder="Optional note…"></div>
+          </div>
+          <div id="ccTxnPayStrip" style="display:none;margin-top:14px;background:var(--blue-50);border:1.5px solid var(--blue-200);border-radius:10px;padding:14px 16px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+              <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Total Txn Amount</div><div style="font-weight:800;font-family:var(--mono);color:var(--blue-800)" id="ccTxnPayStripTotal">—</div></div>
+              <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Txn Paid So Far</div><div style="font-weight:800;font-family:var(--mono);color:var(--green)" id="ccTxnPayStripPaid">—</div></div>
+              <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Txn Balance Due</div><div style="font-weight:800;font-family:var(--mono);color:var(--red)" id="ccTxnPayStripBal">—</div></div>
+            </div>
+          </div>
+          <div class="f-actions" style="margin-top:14px">
+            <button class="btn btn-blue admin-only" onclick="addCCTxnPayment()">✅ Record Txn Payment</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commission Payment -->
+      <div class="box">
+        <div class="box-head"><span>📊</span><div class="box-title">Commission Payment — Paid to Party</div></div>
+        <div class="box-body">
+          <p style="font-size:.78rem;color:var(--gray-500);margin-bottom:14px;font-family:var(--mono)">Record commission rent paid out to the party based on transaction %. Separate from txn amount.</p>
+          <div class="fg">
+            <div class="f"><label>Party Name *</label><select id="ccCommPayParty" onchange="ccCommPayPartyChange()"><option value="">— Choose Party —</option></select></div>
+            <div class="f"><label>Payment Date *</label><input type="date" id="ccCommPayDate"></div>
+            <div class="f"><label>Commission Amount (₹) *</label><input type="number" id="ccCommPayAmt" placeholder="0.00" min="0"></div>
+            <div class="f"><label>Payment Mode</label><select id="ccCommPayMode"><option>Cash</option><option>UPI</option><option>NEFT/RTGS</option><option>Cheque</option><option>Other</option></select></div>
+            <div class="f" style="grid-column:1/-1"><label>Remarks</label><input type="text" id="ccCommPayRem" placeholder="Optional note…"></div>
+          </div>
+          <div id="ccCommPayStrip" style="display:none;margin-top:14px;background:var(--orange-bg);border:1.5px solid var(--orange-bd);border-radius:10px;padding:14px 16px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+              <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Total Commission</div><div style="font-weight:800;font-family:var(--mono);color:var(--orange)" id="ccCommPayStripTotal">—</div></div>
+              <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Comm Paid So Far</div><div style="font-weight:800;font-family:var(--mono);color:var(--green)" id="ccCommPayStripPaid">—</div></div>
+              <div><div style="font-size:.63rem;font-family:var(--mono);color:var(--gray-500);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Comm Balance Due</div><div style="font-weight:800;font-family:var(--mono);color:var(--red)" id="ccCommPayStripBal">—</div></div>
+            </div>
+          </div>
+          <div class="f-actions" style="margin-top:14px">
+            <button class="btn btn-blue admin-only" onclick="addCCCommPayment()">✅ Record Commission Payment</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── COMMISSION REPORT ── -->
+    <div class="sub-panel" id="cc-commission">
+      <div class="box" style="margin-bottom:18px">
+        <div class="box-head"><span>📊</span><div class="box-title">Commission Report</div></div>
+        <div class="box-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div class="f"><label>Party</label><select id="ccCommFilterParty" onchange="renderCCCommission()"><option value="">— All Parties —</option></select></div>
+            <div class="f"><label>Date From</label><input type="date" id="ccCommFrom" onchange="renderCCCommission()"></div>
+            <div class="f"><label>Date To</label><input type="date" id="ccCommTo" onchange="renderCCCommission()"></div>
+            <button class="btn btn-outline btn-sm" onclick="clearCCCommFilter()">✕ Clear</button>
+          </div>
+        </div>
+      </div>
+      <!-- Summary cards -->
+      <div id="ccCommCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px"></div>
+      <div class="tbl-card">
+        <div style="overflow-x:auto">
+          <table id="ccCommTable2">
+            <thead><tr><th>#</th><th>Party</th><th>Txn Date</th><th>Card</th><th>Txn Amount</th><th>Comm %</th><th>Commission</th></tr></thead>
+            <tbody id="ccCommBody"></tbody>
+            <tfoot id="ccCommFoot"></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PARTY LEDGER ── -->
+    <div class="sub-panel" id="cc-ledger">
+      <div class="box" style="margin-bottom:18px">
+        <div class="box-head"><span>📒</span><div class="box-title">Party Ledger</div></div>
+        <div class="box-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div class="f" style="flex:1;min-width:180px"><label>Select Party *</label><select id="ccLedgerParty" onchange="renderCCLedger()"><option value="">— Choose Party —</option></select></div>
+            <div class="f"><label>Date From</label><input type="date" id="ccLedgerFrom" onchange="renderCCLedger()"></div>
+            <div class="f"><label>Date To</label><input type="date" id="ccLedgerTo" onchange="renderCCLedger()"></div>
+          </div>
+        </div>
+      </div>
+      <div id="ccLedgerContent" style="display:none">
+        <!-- Balance cards -->
+        <div id="ccLedgerCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px"></div>
+        <!-- Transactions -->
+        <div class="tbl-card" style="margin-bottom:18px">
+          <div class="tbl-top"><div class="tbl-title">💳 Transactions</div></div>
+          <div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Date</th><th>Card</th><th>Amount</th><th>Comm %</th><th>Commission</th><th>Remarks</th></tr></thead><tbody id="ccLedgerTxnBody"></tbody><tfoot id="ccLedgerTxnFoot"></tfoot></table></div>
+        </div>
+        <!-- Payments -->
+        <div class="tbl-card">
+          <div class="tbl-top"><div class="tbl-title">💸 Payments Made</div></div>
+          <div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Mode</th><th>Remarks</th></tr></thead><tbody id="ccLedgerPayBody"></tbody><tfoot id="ccLedgerPayFoot"></tfoot></table></div>
+        </div>
+      </div>
+      <div id="ccLedgerEmpty" style="text-align:center;padding:48px;color:var(--gray-500);font-style:italic">Select a party to view their ledger</div>
+    </div>
+
+    <!-- ── SUMMARY ── -->
+    <div class="sub-panel" id="cc-summary">
+      <div class="box" style="margin-bottom:18px">
+        <div class="box-head" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px"><span>📋</span><div class="box-title">All Parties Summary</div></div>
+          <button class="btn btn-red btn-sm admin-only" onclick="clearCCData()">🗑️ Clear CC Data</button>
+        </div>
+        <div class="box-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div class="f"><label>Date From</label><input type="date" id="ccSumFrom" onchange="renderCCSummary()"></div>
+            <div class="f"><label>Date To</label><input type="date" id="ccSumTo" onchange="renderCCSummary()"></div>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('ccSumFrom').value='';document.getElementById('ccSumTo').value='';renderCCSummary()">✕ Clear</button>
+          </div>
+        </div>
+      </div>
+      <div id="ccSumCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px"></div>
+      <div class="tbl-card">
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Party</th><th>Txns</th><th>Txn Amount</th><th>Txn Received</th><th>Txn Balance</th><th>Comm %</th><th>Commission</th><th>Comm Paid</th><th>Comm Balance</th><th>Status</th></tr></thead>
+            <tbody id="ccSumBody"></tbody>
+            <tfoot id="ccSumFoot"></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1633,6 +2066,7 @@ function switchTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
   if (id === 'dashboard') { renderDashboard(); updateSummary(); }
+  if (id === 'cc') { initCCTab(); }
 }
 
 /* ── OTHERS SUB-TAB SWITCH ── */
@@ -2540,8 +2974,8 @@ function printReceipt() {
   const paper=document.querySelector('.rcpt-paper');
   const w=window.open('','_blank','width=700,height=900');
   w.document.write('<html><head><title>Receipt</title>');
-  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">');
-  w.document.write('<style>body{font-family:"Plus Jakarta Sans",sans-serif;margin:0;padding:20px;background:#fff}');
+  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">');
+  w.document.write('<style>body{font-family:"Inter",system-ui,sans-serif;margin:0;padding:20px;background:#fff}');
   w.document.write(document.querySelector('style').textContent);
   w.document.write('</style></head><body>');
   w.document.write(paper.outerHTML);
@@ -2764,35 +3198,35 @@ function printCustLedger() {
   const cards = document.getElementById('clCards');
   const w = window.open('','_blank','width=900,height=900');
   w.document.write(`<html><head><title>Ledger - ${party}</title>`);
-  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">');
+  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">');
   w.document.write('<style>');
-  w.document.write('body{font-family:"Plus Jakarta Sans",sans-serif;margin:0;padding:24px;background:#fff;color:#0f172a}');
+  w.document.write('body{font-family:"Inter",system-ui,sans-serif;margin:0;padding:24px;background:#fff;color:#0f172a}');
   w.document.write(document.querySelector('style').textContent);
   w.document.write('.box{border:1.5px solid #bfdbfe;border-radius:12px;overflow:hidden;margin-bottom:20px}');
   w.document.write('.box-head{background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:12px 18px;display:flex;align-items:center;gap:8px}');
   w.document.write('.box-title{font-size:.95rem;font-weight:700;color:#1e4db7}');
   w.document.write('table{width:100%;border-collapse:collapse;font-size:.83rem}');
-  w.document.write('thead tr{background:#0c1e4a}th{padding:10px 12px;text-align:left;font-family:"JetBrains Mono",monospace;font-size:.63rem;letter-spacing:1px;color:rgba(255,255,255,.75);text-transform:uppercase}');
+  w.document.write('thead tr{background:#0c1e4a}th{padding:10px 12px;text-align:left;font-family:"DM Mono",monospace;font-size:.63rem;letter-spacing:1px;color:rgba(255,255,255,.75);text-transform:uppercase}');
   w.document.write('td{padding:10px 12px;border-top:1px solid #eff6ff;vertical-align:middle}');
-  w.document.write('tfoot td{padding:10px 12px;font-weight:800;font-family:"JetBrains Mono",monospace;background:#eff6ff;border-top:2px solid #bfdbfe}');
+  w.document.write('tfoot td{padding:10px 12px;font-weight:800;font-family:"DM Mono",monospace;background:#eff6ff;border-top:2px solid #bfdbfe}');
   w.document.write('.print-header{background:linear-gradient(135deg,#1a3066,#1e4db7);color:#fff;padding:20px 28px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}');
   w.document.write('.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}');
   w.document.write('.cl-card{background:#fff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px}');
-  w.document.write('.cl-card-label{font-size:.63rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-family:"JetBrains Mono",monospace}');
+  w.document.write('.cl-card-label{font-size:.63rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-family:"DM Mono",monospace}');
   w.document.write('.cl-card-val{font-size:1.3rem;font-weight:800;margin-top:4px}');
-  w.document.write('.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;font-family:"JetBrains Mono",monospace}');
+  w.document.write('.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;font-family:"DM Mono",monospace}');
   w.document.write('.b-paid{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}.b-overdue{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}.b-pending{background:#fffbeb;color:#d97706;border:1px solid #fde68a}');
-  w.document.write('.mono{font-family:"JetBrains Mono",monospace;font-weight:600}.c-red{color:#dc2626}.c-green{color:#16a34a}.b-no{font-family:"JetBrains Mono",monospace;font-size:.8rem;color:#2563eb}');
-  w.document.write('.cl-txn-bill{background:#eff6ff;color:#1d4ed8;font-family:"JetBrains Mono",monospace;font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:5px}');
-  w.document.write('.cl-txn-due{background:#fef2f2;color:#dc2626;font-family:"JetBrains Mono",monospace;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:5px}');
-  w.document.write('.cl-txn-pay{background:#f0fdf4;color:#16a34a;font-family:"JetBrains Mono",monospace;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:5px}');
+  w.document.write('.mono{font-family:"DM Mono",monospace;font-weight:600}.c-red{color:#dc2626}.c-green{color:#16a34a}.b-no{font-family:"DM Mono",monospace;font-size:.8rem;color:#2563eb}');
+  w.document.write('.cl-txn-bill{background:#eff6ff;color:#1d4ed8;font-family:"DM Mono",monospace;font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:5px}');
+  w.document.write('.cl-txn-due{background:#fef2f2;color:#dc2626;font-family:"DM Mono",monospace;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:5px}');
+  w.document.write('.cl-txn-pay{background:#f0fdf4;color:#16a34a;font-family:"DM Mono",monospace;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:5px}');
   w.document.write('@media print{body{padding:12px}}</style></head><body>');
   const now = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-  w.document.write(`<div class="print-header"><div><div style="font-size:1.4rem;font-weight:800;letter-spacing:-.3px">Due<span style="color:#93c5fd">Ledger</span></div><div style="font-size:.65rem;color:rgba(255,255,255,.5);letter-spacing:1.5px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-top:2px">ACCOUNT LEDGER</div></div><div style="text-align:right"><div style="font-size:1.1rem;font-weight:800">${party}</div><div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:3px">${now}</div></div></div>`);
+  w.document.write(`<div class="print-header"><div><div style="font-size:1.4rem;font-weight:800;letter-spacing:-.3px">Due<span style="color:#93c5fd">Ledger</span></div><div style="font-size:.65rem;color:rgba(255,255,255,.5);letter-spacing:1.5px;text-transform:uppercase;font-family:'DM Mono',monospace;margin-top:2px">ACCOUNT LEDGER</div></div><div style="text-align:right"><div style="font-size:1.1rem;font-weight:800">${party}</div><div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:3px">${now}</div></div></div>`);
   w.document.write('<div class="summary-grid">' + document.getElementById('clCards').innerHTML + '</div>');
   w.document.write(box.outerHTML);
   w.document.write(hist.outerHTML);
-  w.document.write('<div style="text-align:center;font-family:JetBrains Mono,monospace;font-size:.62rem;color:#94a3b8;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0">Generated by DueLedger · Developed by Kuntal Mandal · ' + new Date().toLocaleString('en-IN') + '</div>');
+  w.document.write('<div style="text-align:center;font-family:DM Mono,monospace;font-size:.62rem;color:#94a3b8;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0">Generated by Apple Resale & Card Management · Developed by Kuntal Mandal · ' + new Date().toLocaleString('en-IN') + '</div>');
   w.document.write('</body></html>');
   w.document.close(); w.focus();
   setTimeout(() => { w.print(); w.close(); }, 700);
@@ -2978,33 +3412,33 @@ function printMonthReport() {
   const partyLabel = party || 'All Parties';
   const w = window.open('','_blank','width=960,height=900');
   w.document.write(`<html><head><title>Month Report - ${label}</title>`);
-  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">');
-  w.document.write('<style>body{font-family:"Plus Jakarta Sans",sans-serif;margin:0;padding:24px;background:#fff;color:#0f172a}');
+  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">');
+  w.document.write('<style>body{font-family:"Inter",system-ui,sans-serif;margin:0;padding:24px;background:#fff;color:#0f172a}');
   w.document.write(document.querySelector('style').textContent);
   w.document.write('.print-header{background:linear-gradient(135deg,#1a3066,#1e4db7);color:#fff;padding:20px 28px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}');
   w.document.write('.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}');
   w.document.write('.mr-card{background:#fff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px}');
-  w.document.write('.mr-card-label{font-size:.63rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-family:"JetBrains Mono",monospace}');
-  w.document.write('.mr-card-val{font-size:1.3rem;font-weight:800;margin-top:4px}.mr-card-sub{font-size:.7rem;color:#64748b;font-family:"JetBrains Mono",monospace;margin-top:2px}');
+  w.document.write('.mr-card-label{font-size:.63rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-family:"DM Mono",monospace}');
+  w.document.write('.mr-card-val{font-size:1.3rem;font-weight:800;margin-top:4px}.mr-card-sub{font-size:.7rem;color:#64748b;font-family:"DM Mono",monospace;margin-top:2px}');
   w.document.write('.box{border:1.5px solid #bfdbfe;border-radius:12px;overflow:hidden;margin-bottom:20px}');
   w.document.write('.box-head{background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:12px 18px;display:flex;align-items:center;gap:8px}');
   w.document.write('.box-title{font-size:.95rem;font-weight:700;color:#1e4db7}');
   w.document.write('table{width:100%;border-collapse:collapse;font-size:.83rem}thead tr{background:#0c1e4a}');
-  w.document.write('th{padding:10px 12px;text-align:left;font-family:"JetBrains Mono",monospace;font-size:.63rem;letter-spacing:1px;color:rgba(255,255,255,.75);text-transform:uppercase}');
+  w.document.write('th{padding:10px 12px;text-align:left;font-family:"DM Mono",monospace;font-size:.63rem;letter-spacing:1px;color:rgba(255,255,255,.75);text-transform:uppercase}');
   w.document.write('td{padding:10px 12px;border-top:1px solid #eff6ff;vertical-align:middle}');
-  w.document.write('tfoot td{padding:10px 12px;font-weight:800;font-family:"JetBrains Mono",monospace;background:#eff6ff;border-top:2px solid #bfdbfe}');
-  w.document.write('.mono{font-family:"JetBrains Mono",monospace;font-weight:600}.c-red{color:#dc2626}.c-green{color:#16a34a}.b-no{font-family:"JetBrains Mono",monospace;font-size:.8rem;color:#2563eb}.p-name{font-weight:700;color:#1e3a8a}');
-  w.document.write('.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;font-family:"JetBrains Mono",monospace}');
+  w.document.write('tfoot td{padding:10px 12px;font-weight:800;font-family:"DM Mono",monospace;background:#eff6ff;border-top:2px solid #bfdbfe}');
+  w.document.write('.mono{font-family:"DM Mono",monospace;font-weight:600}.c-red{color:#dc2626}.c-green{color:#16a34a}.b-no{font-family:"DM Mono",monospace;font-size:.8rem;color:#2563eb}.p-name{font-weight:700;color:#1e3a8a}');
+  w.document.write('.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;font-family:"DM Mono",monospace}');
   w.document.write('.b-paid{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}.b-overdue{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}.b-pending{background:#fffbeb;color:#d97706;border:1px solid #fde68a}.b-ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}');
   w.document.write('@media print{body{padding:12px}}</style></head><body>');
   const now = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-  w.document.write(`<div class="print-header"><div><div style="font-size:1.4rem;font-weight:800;letter-spacing:-.3px">Due<span style="color:#93c5fd">Ledger</span></div><div style="font-size:.65rem;color:rgba(255,255,255,.5);letter-spacing:1.5px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-top:2px">MONTH WISE REPORT</div></div><div style="text-align:right"><div style="font-size:1.1rem;font-weight:800">${label} · ${partyLabel}</div><div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:3px">${now}</div></div></div>`);
+  w.document.write(`<div class="print-header"><div><div style="font-size:1.4rem;font-weight:800;letter-spacing:-.3px">Due<span style="color:#93c5fd">Ledger</span></div><div style="font-size:.65rem;color:rgba(255,255,255,.5);letter-spacing:1.5px;text-transform:uppercase;font-family:'DM Mono',monospace;margin-top:2px">MONTH WISE REPORT</div></div><div style="text-align:right"><div style="font-size:1.1rem;font-weight:800">${label} · ${partyLabel}</div><div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:3px">${now}</div></div></div>`);
   w.document.write('<div class="summary-grid">'+document.getElementById('mrCards').innerHTML+'</div>');
   const mb = document.getElementById('mrMonthBreak');
   if (mb.style.display !== 'none') w.document.write(mb.outerHTML);
   const det = document.getElementById('mrDetail');
   if (det.style.display !== 'none') w.document.write(det.outerHTML);
-  w.document.write('<div style="text-align:center;font-family:JetBrains Mono,monospace;font-size:.62rem;color:#94a3b8;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0">Generated by DueLedger · Developed by Kuntal Mandal · '+new Date().toLocaleString('en-IN')+'</div>');
+  w.document.write('<div style="text-align:center;font-family:DM Mono,monospace;font-size:.62rem;color:#94a3b8;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0">Generated by Apple Resale & Card Management · Developed by Kuntal Mandal · '+new Date().toLocaleString('en-IN')+'</div>');
   w.document.write('</body></html>');
   w.document.close(); w.focus();
   setTimeout(()=>{w.print();w.close();},700);
@@ -3039,11 +3473,11 @@ function downloadBulkTemplate() {
   ];
   const ws2 = XLSX.utils.aoa_to_sheet([h2,...s2]);
   ws2['!cols']=[{wch:18},{wch:14},{wch:14},{wch:14},{wch:28}];
-  const note=[['ℹ️ Use this sheet to add multiple payments to bills already in DueLedger or imported from the Bills sheet.']];
+  const note=[['ℹ️ Use this sheet to add multiple payments to bills already in Apple Resale & Card Management or imported from the Bills sheet.']];
   XLSX.utils.sheet_add_aoa(ws2, note, {origin:'A'+(s2.length+3)});
   XLSX.utils.book_append_sheet(wb, ws2, 'Payments Import');
 
-  XLSX.writeFile(wb, 'DueLedger_Bulk_Import_Template.xlsx');
+  XLSX.writeFile(wb, 'Apple_Resale_Bulk_Import_Template.xlsx');
   toast('Template downloaded!','ok');
 }
 
@@ -3294,7 +3728,7 @@ function confirmBulkImport() {
   if(!msg) msg = 'Nothing to import';
   rc.innerHTML = '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.4rem">✅</span>'
     +'<div><div style="font-weight:800;color:var(--green);font-size:.92rem">'+msg+' successfully!</div>'
-    +'<div style="font-size:.75rem;font-family:var(--mono);color:var(--gray-500);margin-top:2px">All records saved to DueLedger</div></div></div>';
+    +'<div style="font-size:.75rem;font-family:var(--mono);color:var(--gray-500);margin-top:2px">All records saved to Apple Resale & Card Management</div></div></div>';
 
   _bulkRows=[]; _bulkPayRows=[];
   setTimeout(()=>{ renderBulkPreview(); }, 2500);
@@ -3377,16 +3811,27 @@ function applyAuthMode() {
     badge.textContent = '👤 Guest — View Only';
     badge.className   = 'guest-badge';
     logoutBtn.style.display = 'none';
-    // Switch to ledger if current sub-tab is admin-only
-    const activeSub = document.querySelector('.sub-panel.active');
+    // Switch to ledger if current Others sub-tab is admin-only
+    const activeSub = document.querySelector('#tab-others .sub-panel.active');
     if (activeSub && (activeSub.id === 'sub-entry' || activeSub.id === 'sub-payment')) {
-      document.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
-      document.querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('#tab-others .sub-panel').forEach(p=>p.classList.remove('active'));
+      document.querySelectorAll('#tab-others .sub-tab').forEach(b=>b.classList.remove('active'));
       const ledgerPanel = document.getElementById('sub-ledger');
-      const ledgerBtn   = document.querySelector('.sub-tab:not(.admin-only)');
+      const ledgerBtn   = document.querySelector('#tab-others .sub-tab:not(.admin-only)');
       if (ledgerPanel) ledgerPanel.classList.add('active');
       if (ledgerBtn)   ledgerBtn.classList.add('active');
       renderLedger('');
+    }
+    // Switch CC tab to Dashboard if on admin-only sub-tab
+    const activeCCSub = document.querySelector('#tab-cc .sub-panel.active');
+    if (activeCCSub && (activeCCSub.id === 'cc-txn' || activeCCSub.id === 'cc-pay')) {
+      document.querySelectorAll('#tab-cc .sub-panel').forEach(p=>p.classList.remove('active'));
+      document.querySelectorAll('#tab-cc .sub-tab').forEach(b=>b.classList.remove('active'));
+      const dashPanel = document.getElementById('cc-dash');
+      const dashBtn   = document.querySelector('#tab-cc .sub-tab:first-child');
+      if (dashPanel) dashPanel.classList.add('active');
+      if (dashBtn)   dashBtn.classList.add('active');
+      renderCCDash();
     }
   }
 }
@@ -3405,6 +3850,605 @@ function requireAdmin(fn) {
   else { return; } // show overlay
   applyAuthMode();
 })();
+
+
+/* ══════════════════════════════════════════════
+   CREDIT CARD MANAGEMENT
+══════════════════════════════════════════════ */
+
+/* ── CC DASHBOARD ── */
+let _ccdPeriod = 'all';
+
+function setCCDashPeriod(period, btn) {
+  _ccdPeriod = period;
+  document.querySelectorAll('.pill[id^="ccdPill"]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const cr = document.getElementById('ccdCustomRange');
+  cr.style.display = period==='custom' ? 'flex' : 'none';
+  if (period==='custom') {
+    const f=document.getElementById('ccdFrom')?.value;
+    const t=document.getElementById('ccdTo')?.value;
+    if (!f && !t) return;
+  }
+  renderCCDash();
+}
+
+function getCCDashData() {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const yStr = d => d.toISOString().split('T')[0];
+  let from='', to='';
+  if(_ccdPeriod==='today')   { from=to=yStr(now); }
+  else if(_ccdPeriod==='week')  { const d=new Date(now); d.setDate(d.getDate()-d.getDay()+1); from=yStr(d); to=yStr(now); }
+  else if(_ccdPeriod==='month') { from=yStr(new Date(now.getFullYear(),now.getMonth(),1)); to=yStr(now); }
+  else if(_ccdPeriod==='year')  { from=yStr(new Date(now.getFullYear(),0,1)); to=yStr(now); }
+  else if(_ccdPeriod==='custom'){ from=document.getElementById('ccdFrom')?.value||''; to=document.getElementById('ccdTo')?.value||''; }
+  const lbl=document.getElementById('ccdRangeLabel');
+  if(lbl) lbl.textContent = (from||to) ? (from||'…')+' → '+(to||'…') : '';
+  const txns = (!from&&!to) ? [...ccTxns] : ccTxns.filter(t=>(!from||t.date>=from)&&(!to||t.date<=to));
+  const pays = (!from&&!to) ? [...ccPayments] : ccPayments.filter(p=>(!from||p.date>=from)&&(!to||p.date<=to));
+  return {txns, pays, from, to};
+}
+
+function renderCCDash() {
+  const {txns, pays} = getCCDashData();
+
+  const totTxn      = txns.reduce((s,t)=>s + +t.amount, 0);
+  const totComm     = txns.reduce((s,t)=>s + ccCommAmt(+t.amount, +t.rentPct||ccGetRate(t.party)), 0);
+  // Use filtered txnPays/commPays based on period
+  const {from:df, to:dt} = getCCDashData();
+  const filtTxnPays  = (!df&&!dt)?[...ccTxnPays] :ccTxnPays.filter(p=>(!df||p.date>=df)&&(!dt||p.date<=dt));
+  const filtCommPays = (!df&&!dt)?[...ccCommPays]:ccCommPays.filter(p=>(!df||p.date>=df)&&(!dt||p.date<=dt));
+  const totTxnPaid  = filtTxnPays.reduce((s,p)=>s + +p.amount, 0);
+  const totCommPaid = filtCommPays.reduce((s,p)=>s + +p.amount, 0);
+  const totBal      = totComm - totCommPaid;
+
+  // Summary cards
+  document.getElementById('ccdCards').innerHTML = `
+    <div class="s-card">
+      <div class="s-icon">💳</div>
+      <div class="s-label">Total Transaction</div>
+      <div class="s-value" style="font-size:1.5rem">${fmt(totTxn)}</div>
+      <div class="s-sub">${txns.length} transaction${txns.length!==1?'s':''}</div>
+      <div class="s-card-bg" style="background:var(--blue-600)"></div>
+    </div>
+    <div class="s-card">
+      <div class="s-icon">📊</div>
+      <div class="s-label">Total Commission</div>
+      <div class="s-value" style="font-size:1.5rem;color:var(--orange)">${fmt(totComm)}</div>
+      <div class="s-sub">earned on transactions</div>
+      <div class="s-card-bg" style="background:var(--orange)"></div>
+    </div>
+    <div class="s-card">
+      <div class="s-icon">💰</div>
+      <div class="s-label">Txn Received</div>
+      <div class="s-value" style="font-size:1.5rem;color:var(--blue-600)">${fmt(totTxnPaid)}</div>
+      <div class="s-sub">Bal: ${fmt(totTxn-totTxnPaid)}</div>
+      <div class="s-card-bg" style="background:var(--blue-600)"></div>
+    </div>
+    <div class="s-card">
+      <div class="s-icon">✅</div>
+      <div class="s-label">Commission Paid</div>
+      <div class="s-value" style="font-size:1.5rem;color:var(--green)">${fmt(totCommPaid)}</div>
+      <div class="s-sub">${filtCommPays.length} payment${filtCommPays.length!==1?'s':''}</div>
+      <div class="s-card-bg" style="background:var(--green)"></div>
+    </div>
+    <div class="s-card">
+      <div class="s-icon">⚖️</div>
+      <div class="s-label">Balance Due</div>
+      <div class="s-value" style="font-size:1.5rem;color:${totBal>0?'var(--red)':'var(--green)'}">${fmt(totBal)}</div>
+      <div class="s-sub">${totBal<=0?'✅ All settled':'pending commission'}</div>
+      <div class="s-card-bg" style="background:var(--red)"></div>
+    </div>
+  `;
+
+  // Progress bars
+  const base = totComm || 1;
+  const pctC = Math.min(100, Math.round(totCommPaid/base*100));
+  const pctP = Math.min(100, Math.round(totBal/base*100));
+  document.getElementById('ccdPctCollected').textContent = pctC+'%';
+  document.getElementById('ccdPctPending').textContent   = Math.max(0,pctP)+'%';
+  document.getElementById('ccdBarCollected').style.width = pctC+'%';
+  document.getElementById('ccdBarPending').style.width   = Math.max(0,pctP)+'%';
+  document.getElementById('ccdTotalComm').textContent    = fmt(totComm);
+  document.getElementById('ccdTotalBal').textContent     = fmt(totBal);
+  // Also show txn balance inline in bar section
+
+  // Top parties by balance due
+  const partyMap={};
+  ccParties().forEach(p=>{
+    const s=ccPartyStats(p,'','');
+    if(s.bal>0||s.totTxn>0) partyMap[p]=s;
+  });
+  const sorted=Object.entries(partyMap).filter(([,s])=>s.bal>0).sort((a,b)=>b[1].bal-a[1].bal).slice(0,6);
+  const tpDiv=document.getElementById('ccdTopParties');
+  if(!sorted.length) {
+    tpDiv.innerHTML='<div style="text-align:center;padding:24px;color:var(--gray-500);font-style:italic">No pending commissions 🎉</div>';
+  } else {
+    tpDiv.innerHTML=sorted.map(([name,s])=>`
+      <div class="party-due-row">
+        <div>
+          <div class="party-due-name">${name}</div>
+          <div class="party-due-meta">${fmt(s.totTxn)} txn · ${s.pct}% comm · ${s.txns.length} bill${s.txns.length!==1?'s':''}</div>
+        </div>
+        <div class="party-due-right">
+          <div class="party-due-bal">${fmt(s.bal)}</div>
+          <span class="badge b-overdue">PENDING</span>
+        </div>
+      </div>`).join('');
+  }
+
+  // Recent transactions (last 5)
+  const recentTxn=[...txns].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  const rtDiv=document.getElementById('ccdRecentTxn');
+  if(!recentTxn.length) {
+    rtDiv.innerHTML='<div style="text-align:center;padding:24px;color:var(--gray-500);font-style:italic">No transactions yet</div>';
+  } else {
+    rtDiv.innerHTML=recentTxn.map(t=>{
+      const comm=ccCommAmt(+t.amount,+t.rentPct||ccGetRate(t.party));
+      return `<div class="recent-row">
+        <div class="recent-left">
+          <div class="recent-party">${t.party}</div>
+          <div class="recent-bill">${t.date}${t.card?' · ****'+t.card:''}</div>
+        </div>
+        <div class="recent-right">
+          <span class="mono c-red">${fmt(t.amount)}</span>
+          <span style="font-family:var(--mono);font-size:.72rem;color:var(--orange)">${fmt(comm)} comm</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Recent payments (last 5)
+  const allRecentPays=[...filtTxnPays.map(p=>({...p,ptype:'txn'})),...filtCommPays.map(p=>({...p,ptype:'comm'}))].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  const recentPay=allRecentPays;
+  const rpDiv=document.getElementById('ccdRecentPay');
+  if(!recentPay.length) {
+    rpDiv.innerHTML='<div style="text-align:center;padding:24px;color:var(--gray-500);font-style:italic">No payments yet</div>';
+  } else {
+    rpDiv.innerHTML=recentPay.map(p=>`
+      <div class="recent-row">
+        <div class="recent-left">
+          <div class="recent-party">${p.party}</div>
+          <div class="recent-bill">${p.date} · ${p.mode}</div>
+        </div>
+        <div class="recent-right">
+          <span class="mono c-green">${fmt(p.amount)}</span>
+          <span class="badge b-paid">PAID</span>
+        </div>
+      </div>`).join('');
+  }
+}
+
+
+let ccTxns      = JSON.parse(localStorage.getItem('ccTxns')      || '[]');
+let ccTxnPays   = JSON.parse(localStorage.getItem('ccTxnPays')   || '[]'); // transaction payments from party
+let ccCommPays  = JSON.parse(localStorage.getItem('ccCommPays')  || '[]'); // commission payments to party
+// Migrate old ccPayments → ccCommPays (backwards compat)
+(function(){
+  const old = JSON.parse(localStorage.getItem('ccPayments')||'[]');
+  if(old.length && !JSON.parse(localStorage.getItem('ccCommPays')||'[]').length) {
+    ccCommPays = old; localStorage.setItem('ccCommPays', JSON.stringify(ccCommPays));
+  }
+})();
+let ccCommRates = JSON.parse(localStorage.getItem('ccCommRates') || '{}');
+
+function saveCC() {
+  localStorage.setItem('ccTxns',     JSON.stringify(ccTxns));
+  localStorage.setItem('ccTxnPays',  JSON.stringify(ccTxnPays));
+  localStorage.setItem('ccCommPays', JSON.stringify(ccCommPays));
+  localStorage.setItem('ccCommRates',JSON.stringify(ccCommRates));
+}
+
+function ccSub(id, btn) {
+  document.querySelectorAll('#tab-cc .sub-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#tab-cc .sub-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='cc-dash')       { renderCCDash(); }
+  if(id==='cc-txn')        { refreshCCPartyLists(); renderCCCommTable(); }
+  if(id==='cc-pay')        { refreshCCPayParty(); ccTxnPayPartyChange(); ccCommPayPartyChange(); }
+  if(id==='cc-commission') { refreshCCCommFilter(); renderCCCommission(); }
+  if(id==='cc-ledger')     { refreshCCLedgerParty(); renderCCLedger(); }
+  if(id==='cc-summary')    { renderCCSummary(); }
+}
+
+/* helpers */
+function ccParties() {
+  return [...new Set([...ccTxns.map(t=>t.party),...ccTxnPays.map(p=>p.party),...ccCommPays.map(p=>p.party)])].sort();
+}
+function ccGetRate(party) {
+  return parseFloat(ccCommRates[party]||0);
+}
+function ccCommAmt(txnAmt, pct) {
+  return txnAmt * pct / 100;
+}
+function ccPartyStats(party, from, to) {
+  let txns     = ccTxns.filter(t=>t.party===party);
+  let txnPays  = ccTxnPays.filter(p=>p.party===party);
+  let commPays = ccCommPays.filter(p=>p.party===party);
+  if(from) { txns=txns.filter(t=>t.date>=from); txnPays=txnPays.filter(p=>p.date>=from); commPays=commPays.filter(p=>p.date>=from); }
+  if(to)   { txns=txns.filter(t=>t.date<=to);   txnPays=txnPays.filter(p=>p.date<=to);   commPays=commPays.filter(p=>p.date<=to); }
+  const totTxn      = txns.reduce((s,t)=>s + +t.amount, 0);
+  const pct         = ccGetRate(party);
+  const totComm     = txns.reduce((s,t)=>s + ccCommAmt(+t.amount, +t.rentPct||pct), 0);
+  const totTxnPaid  = txnPays.reduce((s,p)=>s + +p.amount, 0);
+  const totCommPaid = commPays.reduce((s,p)=>s + +p.amount, 0);
+  return {
+    totTxn, pct, totComm,
+    totTxnPaid,  txnBal: totTxn - totTxnPaid,
+    totCommPaid, commBal: totComm - totCommPaid,
+    txns, txnPays, commPays
+  };
+}
+
+/* ── ADD TRANSACTION ── */
+function addCCTxn() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  const party  = document.getElementById('ccTxnParty').value.trim();
+  const card   = document.getElementById('ccTxnCard').value.trim();
+  const date   = document.getElementById('ccTxnDate').value;
+  const amount = parseFloat(document.getElementById('ccTxnAmt').value)||0;
+  const rentPct= parseFloat(document.getElementById('ccTxnRent').value)||ccGetRate(party)||0;
+  const remarks= document.getElementById('ccTxnRem').value.trim();
+  if(!party||!date||amount<=0){toast('Fill Party, Date & Amount!','err');return;}
+  const comm = ccCommAmt(amount, rentPct);
+  ccTxns.push({id:Date.now(),party,card,date,amount,rentPct,remarks});
+  // Auto-save commission rate if provided
+  if(rentPct>0) ccCommRates[party] = rentPct;
+  saveCC();
+  refreshCCPartyLists(); renderCCCommTable();
+  // Success
+  const sc=document.getElementById('ccTxnSuccess');
+  document.getElementById('ccTxnSuccessText').textContent =
+    '✅ Added: '+party+' · '+fmt(amount)+' · Commission: '+fmt(comm)+' ('+rentPct+'%)';
+  sc.style.display='block';
+  setTimeout(()=>sc.style.display='none',3500);
+  ['ccTxnParty','ccTxnCard','ccTxnAmt','ccTxnRem'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ccTxnRent').value='';
+  document.getElementById('ccTxnDate').value=today();
+  toast('Transaction added','ok');
+}
+
+/* ── COMMISSION SETTINGS ── */
+function saveCCCommission() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  const party = document.getElementById('ccCommParty').value.trim();
+  const pct   = parseFloat(document.getElementById('ccCommPct').value)||0;
+  if(!party||pct<=0){toast('Enter party and commission %','err');return;}
+  ccCommRates[party]=pct;
+  saveCC();
+  renderCCCommTable();
+  document.getElementById('ccCommParty').value='';
+  document.getElementById('ccCommPct').value='';
+  toast('Commission rate saved','ok');
+}
+
+function renderCCCommTable() {
+  const wrap = document.getElementById('ccCommTable');
+  if(!wrap) return;
+  const keys = Object.keys(ccCommRates);
+  if(!keys.length){wrap.innerHTML='<div style="font-size:.8rem;color:var(--gray-500);font-style:italic">No commission rates set yet.</div>';return;}
+  wrap.innerHTML='<table style="font-size:.82rem"><thead><tr><th>Party</th><th>Commission %</th><th class="admin-only">Action</th></tr></thead><tbody>'+
+    keys.sort().map(p=>`<tr>
+      <td style="font-weight:700">${p}</td>
+      <td style="font-family:var(--mono);color:var(--orange)">${ccCommRates[p]}%</td>
+      <td class="admin-only"><button class="btn btn-red btn-sm" onclick="deleteCCCommRate('${p}')">🗑️</button></td>
+    </tr>`).join('')+'</tbody></table>';
+}
+
+function deleteCCCommRate(party) {
+  if(!_isAdmin) return;
+  if(confirm('Delete commission rate for '+party+'?')) {
+    delete ccCommRates[party]; saveCC(); renderCCCommTable();
+  }
+}
+
+/* ── RECORD PAYMENT ── */
+function refreshCCPayParty() {
+  const parties = ccParties();
+  ['ccTxnPayParty','ccCommPayParty'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel) return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">— Choose Party —</option>'+
+      parties.map(p=>`<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
+  });
+  document.getElementById('ccTxnPayDate').value=today();
+  document.getElementById('ccCommPayDate').value=today();
+}
+
+/* Transaction Payment */
+function ccTxnPayPartyChange() {
+  const party=document.getElementById('ccTxnPayParty').value;
+  const strip=document.getElementById('ccTxnPayStrip');
+  if(!party){strip.style.display='none';return;}
+  const s=ccPartyStats(party,'','');
+  document.getElementById('ccTxnPayStripTotal').textContent = fmt(s.totTxn);
+  document.getElementById('ccTxnPayStripPaid').textContent  = fmt(s.totTxnPaid);
+  document.getElementById('ccTxnPayStripBal').textContent   = fmt(s.txnBal);
+  document.getElementById('ccTxnPayStripBal').style.color   = s.txnBal>0?'var(--red)':'var(--green)';
+  strip.style.display='block';
+  document.getElementById('ccTxnPayAmt').value = s.txnBal>0?s.txnBal.toFixed(2):'';
+}
+
+function addCCTxnPayment() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  const party  = document.getElementById('ccTxnPayParty').value;
+  const date   = document.getElementById('ccTxnPayDate').value;
+  const amount = parseFloat(document.getElementById('ccTxnPayAmt').value)||0;
+  const mode   = document.getElementById('ccTxnPayMode').value;
+  const remarks= document.getElementById('ccTxnPayRem').value.trim();
+  if(!party||!date||amount<=0){toast('Fill Party, Date & Amount!','err');return;}
+  ccTxnPays.push({id:Date.now(),party,date,amount,mode,remarks});
+  saveCC();
+  ccTxnPayPartyChange();
+  document.getElementById('ccTxnPayAmt').value='';
+  document.getElementById('ccTxnPayRem').value='';
+  toast('Txn payment '+fmt(amount)+' recorded for '+party,'ok');
+  renderCCDash();
+}
+
+/* Commission Payment */
+function ccCommPayPartyChange() {
+  const party=document.getElementById('ccCommPayParty').value;
+  const strip=document.getElementById('ccCommPayStrip');
+  if(!party){strip.style.display='none';return;}
+  const s=ccPartyStats(party,'','');
+  document.getElementById('ccCommPayStripTotal').textContent = fmt(s.totComm)+' ('+s.pct+'%)';
+  document.getElementById('ccCommPayStripPaid').textContent  = fmt(s.totCommPaid);
+  document.getElementById('ccCommPayStripBal').textContent   = fmt(s.commBal);
+  document.getElementById('ccCommPayStripBal').style.color   = s.commBal>0?'var(--red)':'var(--green)';
+  strip.style.display='block';
+  document.getElementById('ccCommPayAmt').value = s.commBal>0?s.commBal.toFixed(2):'';
+}
+
+function addCCCommPayment() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  const party  = document.getElementById('ccCommPayParty').value;
+  const date   = document.getElementById('ccCommPayDate').value;
+  const amount = parseFloat(document.getElementById('ccCommPayAmt').value)||0;
+  const mode   = document.getElementById('ccCommPayMode').value;
+  const remarks= document.getElementById('ccCommPayRem').value.trim();
+  if(!party||!date||amount<=0){toast('Fill Party, Date & Amount!','err');return;}
+  ccCommPays.push({id:Date.now(),party,date,amount,mode,remarks});
+  saveCC();
+  ccCommPayPartyChange();
+  document.getElementById('ccCommPayAmt').value='';
+  document.getElementById('ccCommPayRem').value='';
+  toast('Commission payment '+fmt(amount)+' recorded for '+party,'ok');
+  renderCCDash();
+}
+
+/* ── COMMISSION REPORT ── */
+function refreshCCCommFilter() {
+  const sel=document.getElementById('ccCommFilterParty');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— All Parties —</option>'+
+    ccParties().map(p=>`<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
+}
+
+function clearCCCommFilter() {
+  document.getElementById('ccCommFilterParty').value='';
+  document.getElementById('ccCommFrom').value='';
+  document.getElementById('ccCommTo').value='';
+  renderCCCommission();
+}
+
+function renderCCCommission() {
+  const party = document.getElementById('ccCommFilterParty')?.value||'';
+  const from  = document.getElementById('ccCommFrom')?.value||'';
+  const to    = document.getElementById('ccCommTo')?.value||'';
+
+  let list = [...ccTxns];
+  if(party) list=list.filter(t=>t.party===party);
+  if(from)  list=list.filter(t=>t.date>=from);
+  if(to)    list=list.filter(t=>t.date<=to);
+  list.sort((a,b)=>a.date.localeCompare(b.date));
+
+  const totTxn  = list.reduce((s,t)=>s + +t.amount, 0);
+  const totComm = list.reduce((s,t)=>s + ccCommAmt(+t.amount, +t.rentPct||ccGetRate(t.party)), 0);
+  // Commission payments only
+  let commPaysF = [...ccCommPays];
+  let txnPaysF  = [...ccTxnPays];
+  if(party) { commPaysF=commPaysF.filter(p=>p.party===party); txnPaysF=txnPaysF.filter(p=>p.party===party); }
+  if(from)  { commPaysF=commPaysF.filter(p=>p.date>=from);    txnPaysF=txnPaysF.filter(p=>p.date>=from); }
+  if(to)    { commPaysF=commPaysF.filter(p=>p.date<=to);      txnPaysF=txnPaysF.filter(p=>p.date<=to); }
+  const totTxnPaid  = txnPaysF.reduce((s,p)=>s + +p.amount, 0);
+  const totCommPaid = commPaysF.reduce((s,p)=>s + +p.amount, 0);
+
+  const cards = document.getElementById('ccCommCards');
+  cards.innerHTML=`
+    <div class="mr-card"><div class="mr-card-label">Total Transactions</div><div class="mr-card-val" style="color:var(--blue-800)">${fmt(totTxn)}</div><div class="mr-card-sub">${list.length} txns</div></div>
+    <div class="mr-card"><div class="mr-card-label">Total Commission</div><div class="mr-card-val" style="color:var(--orange)">${fmt(totComm)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Txn Received</div><div class="mr-card-val" style="color:var(--blue-600)">${fmt(totTxnPaid)}</div><div class="mr-card-sub">Txn bal: ${fmt(totTxn-totTxnPaid)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Comm Paid</div><div class="mr-card-val" style="color:var(--green)">${fmt(totCommPaid)}</div><div class="mr-card-sub">Comm bal: ${fmt(totComm-totCommPaid)}</div></div>
+  `;
+
+  let tT=0,tC=0;
+  document.getElementById('ccCommBody').innerHTML = list.map((t,i)=>{
+    const pct=+t.rentPct||ccGetRate(t.party);
+    const comm=ccCommAmt(+t.amount,pct);
+    tT+=+t.amount; tC+=comm;
+    return `<tr>
+      <td style="color:var(--gray-500);font-size:.73rem">${i+1}</td>
+      <td class="p-name">${t.party}</td>
+      <td style="font-family:var(--mono);font-size:.78rem">${t.date}</td>
+      <td style="font-family:var(--mono);font-size:.78rem;color:var(--blue-600)">${t.card?'****'+t.card:'—'}</td>
+      <td class="mono c-red">${fmt(t.amount)}</td>
+      <td style="font-family:var(--mono);color:var(--orange)">${pct}%</td>
+      <td class="mono" style="color:var(--orange)">${fmt(comm)}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('ccCommFoot').innerHTML=`<tr>
+    <td colspan="4" style="text-align:right">TOTAL</td>
+    <td class="mono c-red">${fmt(tT)}</td><td></td>
+    <td class="mono" style="color:var(--orange)">${fmt(tC)}</td>
+  </tr>`;
+}
+
+/* ── PARTY LEDGER ── */
+function refreshCCLedgerParty() {
+  const sel=document.getElementById('ccLedgerParty');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Choose Party —</option>'+
+    ccParties().map(p=>`<option value="${p}" ${p===cur?'selected':''}>${p}</option>`).join('');
+}
+
+function renderCCLedger() {
+  const party=document.getElementById('ccLedgerParty')?.value||'';
+  const from =document.getElementById('ccLedgerFrom')?.value||'';
+  const to   =document.getElementById('ccLedgerTo')?.value||'';
+  const content=document.getElementById('ccLedgerContent');
+  const empty =document.getElementById('ccLedgerEmpty');
+  if(!party){content.style.display='none';empty.style.display='block';return;}
+  content.style.display='block'; empty.style.display='none';
+
+  const s=ccPartyStats(party,from,to);
+  document.getElementById('ccLedgerCards').innerHTML=`
+    <div class="mr-card"><div class="mr-card-label">Total Txn Amount</div><div class="mr-card-val" style="color:var(--blue-800)">${fmt(s.totTxn)}</div><div class="mr-card-sub">${s.txns.length} transactions</div></div>
+    <div class="mr-card"><div class="mr-card-label">Txn Received</div><div class="mr-card-val" style="color:var(--blue-600)">${fmt(s.totTxnPaid)}</div><div class="mr-card-sub ${s.txnBal>0?'':''}">Bal: ${fmt(s.txnBal)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Commission (${s.pct}%)</div><div class="mr-card-val" style="color:var(--orange)">${fmt(s.totComm)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Comm Paid</div><div class="mr-card-val" style="color:var(--green)">${fmt(s.totCommPaid)}</div><div class="mr-card-sub" style="color:${s.commBal>0?'var(--red)':'var(--green)'}">Bal: ${fmt(s.commBal)}</div></div>
+  `;
+
+  // Transactions table
+  let tT=0,tC=0;
+  const txnsSorted=[...s.txns].sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById('ccLedgerTxnBody').innerHTML=txnsSorted.map((t,i)=>{
+    const pct=+t.rentPct||s.pct;
+    const comm=ccCommAmt(+t.amount,pct);
+    tT+=+t.amount; tC+=comm;
+    return `<tr>
+      <td style="color:var(--gray-500);font-size:.73rem">${i+1}</td>
+      <td style="font-family:var(--mono);font-size:.78rem">${t.date}</td>
+      <td style="font-family:var(--mono);color:var(--blue-600)">${t.card?'****'+t.card:'—'}</td>
+      <td class="mono c-red">${fmt(t.amount)}</td>
+      <td style="font-family:var(--mono);color:var(--orange)">${pct}%</td>
+      <td class="mono" style="color:var(--orange)">${fmt(comm)}</td>
+      <td style="font-size:.75rem;color:var(--gray-500)">${t.remarks||'—'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('ccLedgerTxnFoot').innerHTML=`<tr>
+    <td colspan="3" style="text-align:right">TOTAL</td>
+    <td class="mono c-red">${fmt(tT)}</td><td></td>
+    <td class="mono" style="color:var(--orange)">${fmt(tC)}</td><td></td>
+  </tr>`;
+
+  // Transaction Payments table
+  let tTP=0;
+  const txnPaysSorted=[...s.txnPays].sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById('ccLedgerPayBody').innerHTML=
+    '<tr style="background:var(--blue-50)"><td colspan="5" style="font-weight:700;color:var(--blue-700);font-size:.75rem;padding:8px 12px">💳 Transaction Payments</td></tr>'+
+    (txnPaysSorted.map((p,i)=>{
+      tTP+=+p.amount;
+      return `<tr>
+        <td style="color:var(--gray-500);font-size:.73rem">${i+1}</td>
+        <td style="font-family:var(--mono);font-size:.78rem">${p.date}</td>
+        <td class="mono" style="color:var(--blue-600)">${fmt(p.amount)}</td>
+        <td style="font-size:.78rem">${p.mode}</td>
+        <td style="font-size:.75rem;color:var(--gray-500)">${p.remarks||'—'}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);font-style:italic;padding:10px">No txn payments yet</td></tr>');
+
+  let tCP=0;
+  const commPaysSorted=[...s.commPays].sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById('ccLedgerPayBody').innerHTML +=
+    '<tr style="background:var(--orange-bg)"><td colspan="5" style="font-weight:700;color:var(--orange);font-size:.75rem;padding:8px 12px">📊 Commission Payments</td></tr>'+
+    (commPaysSorted.map((p,i)=>{
+      tCP+=+p.amount;
+      return `<tr>
+        <td style="color:var(--gray-500);font-size:.73rem">${i+1}</td>
+        <td style="font-family:var(--mono);font-size:.78rem">${p.date}</td>
+        <td class="mono c-green">${fmt(p.amount)}</td>
+        <td style="font-size:.78rem">${p.mode}</td>
+        <td style="font-size:.75rem;color:var(--gray-500)">${p.remarks||'—'}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);font-style:italic;padding:10px">No commission payments yet</td></tr>');
+
+  document.getElementById('ccLedgerPayFoot').innerHTML=`<tr>
+    <td colspan="2" style="text-align:right">Txn Paid / Comm Paid</td>
+    <td class="mono" style="color:var(--blue-600)">${fmt(tTP)}</td>
+    <td class="mono c-green" colspan="2">${fmt(tCP)}</td>
+  </tr>`;
+}
+
+/* ── SUMMARY ── */
+function renderCCSummary() {
+  const from=document.getElementById('ccSumFrom')?.value||'';
+  const to  =document.getElementById('ccSumTo')?.value||'';
+  const parties=ccParties();
+
+  let grandTxn=0,grandComm=0;
+  let grandTxnPaid=0, grandCommPaid=0;
+  const rows=parties.map(p=>{
+    const s=ccPartyStats(p,from,to);
+    grandTxn+=s.totTxn; grandComm+=s.totComm;
+    grandTxnPaid+=s.totTxnPaid; grandCommPaid+=s.totCommPaid;
+    return {p,s};
+  }).filter(r=>r.s.txns.length>0||r.s.txnPays.length>0||r.s.commPays.length>0);
+
+  document.getElementById('ccSumCards').innerHTML=`
+    <div class="mr-card"><div class="mr-card-label">Total Txn Volume</div><div class="mr-card-val" style="color:var(--blue-800)">${fmt(grandTxn)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Txn Received</div><div class="mr-card-val" style="color:var(--blue-600)">${fmt(grandTxnPaid)}</div><div class="mr-card-sub">Bal: ${fmt(grandTxn-grandTxnPaid)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Total Commission</div><div class="mr-card-val" style="color:var(--orange)">${fmt(grandComm)}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Comm Paid</div><div class="mr-card-val" style="color:var(--green)">${fmt(grandCommPaid)}</div><div class="mr-card-sub">Bal: ${fmt(grandComm-grandCommPaid)}</div></div>
+  `;
+
+  document.getElementById('ccSumBody').innerHTML=rows.map(({p,s})=>`<tr>
+    <td class="p-name">${p}</td>
+    <td style="font-family:var(--mono)">${s.txns.length}</td>
+    <td class="mono c-red">${fmt(s.totTxn)}</td>
+    <td class="mono" style="color:var(--blue-600)">${fmt(s.totTxnPaid)}</td>
+    <td class="mono ${s.txnBal>0?'c-red':'c-green'}">${fmt(s.txnBal)}</td>
+    <td style="font-family:var(--mono);color:var(--orange)">${s.pct}%</td>
+    <td class="mono" style="color:var(--orange)">${fmt(s.totComm)}</td>
+    <td class="mono c-green">${fmt(s.totCommPaid)}</td>
+    <td class="mono ${s.commBal>0?'c-red':'c-green'}">${fmt(s.commBal)}</td>
+    <td><span class="badge ${s.commBal<=0?'b-paid':'b-overdue'}">${s.commBal<=0?'SETTLED':'PENDING'}</span></td>
+  </tr>`).join('') || '<tr class="empty-row"><td colspan="10">No transactions yet</td></tr>';
+
+  document.getElementById('ccSumFoot').innerHTML=`<tr>
+    <td>TOTAL</td><td></td>
+    <td class="mono c-red">${fmt(grandTxn)}</td>
+    <td class="mono" style="color:var(--blue-600)">${fmt(grandTxnPaid)}</td>
+    <td class="mono">${fmt(grandTxn-grandTxnPaid)}</td>
+    <td></td>
+    <td class="mono" style="color:var(--orange)">${fmt(grandComm)}</td>
+    <td class="mono c-green">${fmt(grandCommPaid)}</td>
+    <td class="mono">${fmt(grandComm-grandCommPaid)}</td><td></td>
+  </tr>`;
+}
+
+/* ── INIT HELPERS ── */
+function refreshCCPartyLists() {
+  const parties=ccParties();
+  ['ccPartyList','ccPartyList2'].forEach(id=>{
+    const dl=document.getElementById(id);
+    if(dl) dl.innerHTML=parties.map(p=>`<option value="${p}">`).join('');
+  });
+}
+function clearCCData() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  if(!confirm('Delete ALL credit card transactions, payments and commission rates? This cannot be undone!')) return;
+  ccTxns=[]; ccPayments=[]; ccCommRates={};
+  saveCC();
+  renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
+  toast('CC data cleared','err');
+}
+
+function initCCTab() {
+  document.getElementById('ccTxnDate').value=today();
+  refreshCCPartyLists();
+  renderCCCommTable();
+  // Always land on dashboard
+  document.querySelectorAll('#tab-cc .sub-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#tab-cc .sub-tab').forEach(b=>b.classList.remove('active'));
+  const dashPanel = document.getElementById('cc-dash');
+  const dashBtn   = document.querySelector('#tab-cc .sub-tab:first-child');
+  if (dashPanel) dashPanel.classList.add('active');
+  if (dashBtn)   dashBtn.classList.add('active');
+  renderCCDash();
+}
 
 /* ── INIT ── */
 try {
