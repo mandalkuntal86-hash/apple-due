@@ -1748,10 +1748,14 @@ function renderDashboard() {
   data.forEach(e => {
     const b = +e.amount - +e.paid;
     if (b > 0) {
-      if (!partyMap[e.party]) partyMap[e.party] = { bal:0, bills:0, overdue:0 };
+      if (!partyMap[e.party]) partyMap[e.party] = { bal:0, bills:0, overdue:0, maxOvDays:0 };
       partyMap[e.party].bal += b;
       partyMap[e.party].bills++;
-      if (diff(e.date) > e.dueDays) partyMap[e.party].overdue++;
+      const od = Math.max(0, diff(e.date) - e.dueDays);
+      if (od > 0) {
+        partyMap[e.party].overdue++;
+        if (od > partyMap[e.party].maxOvDays) partyMap[e.party].maxOvDays = od;
+      }
     }
   });
   const sorted = Object.entries(partyMap).sort((a,b) => b[1].bal - a[1].bal).slice(0,6);
@@ -1761,7 +1765,11 @@ function renderDashboard() {
     <div class="party-due-row">
       <div>
         <div class="party-due-name">${name}</div>
-        <div class="party-due-meta">${d.bills} bill${d.bills>1?'s':''}${d.overdue?' · '+d.overdue+' overdue':''}</div>
+        <div class="party-due-meta">
+          ${d.bills} bill${d.bills>1?'s':''}
+          ${d.overdue ? ` · <span style="color:var(--red)">${d.overdue} overdue</span>` : ''}
+          ${d.maxOvDays > 0 ? ` · <span style="color:var(--red);font-weight:700">+${d.maxOvDays}d OD</span>` : ''}
+        </div>
       </div>
       <div class="party-due-right">
         <div class="party-due-bal">${fmt(d.bal)}</div>
