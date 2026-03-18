@@ -427,7 +427,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
-    <button class="conn-indicator off" id="connIndicator" onclick="openFbSetup()" title="Firebase Connection">
+    <button class="conn-indicator off" id="connIndicator" onclick="connIndicatorClick()" title="Click to reconnect or configure Firebase">
       <div class="conn-dot"></div>
       <span id="connLabel">Local</span>
     </button>
@@ -1165,6 +1165,7 @@ let _fbRef   = null;
 let _connected = false;
 let _fbApp   = null;
 let _unsubscribe = null;
+let _fbAppCounter = 0; // unique app name per init
 const FB_KEY = 'dueLedgerFbConfig';
 
 /* ── PRE-CONFIGURED FIREBASE (auto-seeded) ── */
@@ -1234,35 +1235,16 @@ async function waitForSDK(maxMs=8000) {
 /* ── INIT FIREBASE APP (once) ── */
 async function initFbApp(cfg) {
   const { initializeApp, getDatabase, ref } = await waitForSDK();
-  if (!_fbApp) {
-    _fbApp = initializeApp(cfg, 'dueledger');
+  // Always use the confirmed databaseURL directly — no guessing loops
+  // Firebase does not allow re-initializing with different DB URLs
+  // Always create a fresh app instance to avoid "already initialized" errors
+  if (_fbApp) {
+    try { _fbApp.delete && _fbApp.delete(); } catch(e) {}
+    _fbApp = null;
   }
-  // Try databaseURL from config, then fall back to common regional patterns
-  const urls = [
-    cfg.databaseURL,
-    `https://${cfg.projectId}-default-rtdb.firebaseio.com`,
-    `https://${cfg.projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`,
-    `https://${cfg.projectId}-default-rtdb.europe-west1.firebasedatabase.app`,
-  ].filter(Boolean);
-  let lastErr;
-  for (const url of urls) {
-    try {
-      _db    = getDatabase(_fbApp, url);
-      _fbRef = ref(_db, 'dueledger/entries');
-      // Quick ping test
-      const { get } = await waitForSDK();
-      await get(_fbRef);
-      // Update stored config with working URL
-      cfg.databaseURL = url;
-      localStorage.setItem(FB_KEY, JSON.stringify(cfg));
-      console.log('[FB] Connected using URL:', url);
-      return;
-    } catch(e) {
-      lastErr = e;
-      console.warn('[FB] URL failed:', url, e.message);
-    }
-  }
-  throw lastErr;
+  _fbApp = initializeApp(cfg, 'dueledger-' + (++_fbAppCounter));
+  _db    = getDatabase(_fbApp, cfg.databaseURL);
+  _fbRef = ref(_db, 'dueledger/entries');
 }
 
 /* ── REAL-TIME LISTENER ── */
@@ -1337,6 +1319,14 @@ async function doConnect(cfg, silent=false) {
   }
 }
 
+/* ── INDICATOR CLICK — retry if local, open setup if error ── */
+function connIndicatorClick() {
+  if (_connected) { openFbSetup(); return; }
+  // Try reconnecting silently first
+  toast('🔄 Retrying Firebase connection…', '');
+  autoConnect();
+}
+
 /* ── AUTO CONNECT ON PAGE LOAD ── */
 async function autoConnect() {
   // Always hide overlay immediately - never block the UI
@@ -1366,9 +1356,10 @@ async function autoConnect() {
     refreshAll();
   } catch(e) {
     console.error('[FB] AutoConnect failed:', e);
-    _connected = false;
+    _connected = false; _fbApp = null;
     setUI('local');
-    toast('Firebase offline — using local data','');
+    const msg = e && e.message ? e.message.slice(0,80) : 'Unknown error';
+    toast('Firebase error: ' + msg, 'err');
   }
 }
 
