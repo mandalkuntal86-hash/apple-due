@@ -448,7 +448,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
     <div class="summary-grid">
       <div class="s-card">
         <div class="s-icon">🧾</div>
-        <div class="s-label">Total Due</div>
+        <div class="s-label">Total Sale</div>
         <div class="s-value" id="sDue">₹0</div>
         <div class="s-sub" id="sDueSub">0 pending entries</div>
         <div class="s-card-bg" style="background:var(--blue-600)"></div>
@@ -1452,11 +1452,11 @@ function updateSummary() {
     b > 0 ? pend++ : sett++;
     if (b > 0 && diff(e.date) > 30) over++;
   });
-  document.getElementById('sDue').textContent  = fmt(tDue - tPaid);
+  document.getElementById('sDue').textContent  = fmt(tDue);
   document.getElementById('sPaid').textContent = fmt(tPaid);
   document.getElementById('sBal').textContent  = fmt(tDue - tPaid);
   document.getElementById('sOver').textContent = over;
-  document.getElementById('sDueSub').textContent  = pend + ' pending entries';
+  document.getElementById('sDueSub').textContent  = entries.length + ' total bills';
   document.getElementById('sPaidSub').textContent = sett + ' settled';
 }
 
