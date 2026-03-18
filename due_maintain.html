@@ -960,6 +960,23 @@ let _fbApp   = null;
 let _unsubscribe = null;
 const FB_KEY = 'dueLedgerFbConfig';
 
+/* ── PRE-CONFIGURED FIREBASE (auto-seeded) ── */
+(function seedFirebaseConfig() {
+  const PRESET = {
+    apiKey:      "AIzaSyDezCF2hPatttIJMQ1vo5LnurgLQf3McLo",
+    authDomain:  "apple-due.firebaseapp.com",
+    projectId:   "apple-due",
+    storageBucket: "apple-due.firebasestorage.app",
+    messagingSenderId: "125110818533",
+    appId:       "1:125110818533:web:07a1d3d544f3694663a60c",
+    databaseURL: "https://apple-due-default-rtdb.firebaseio.com"
+  };
+  // Only seed if no config is already saved
+  if (!localStorage.getItem(FB_KEY)) {
+    localStorage.setItem(FB_KEY, JSON.stringify(PRESET));
+  }
+})();
+
 /* ── HELPERS ── */
 const fmt   = n => '₹' + Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const today = () => new Date().toISOString().split('T')[0];
