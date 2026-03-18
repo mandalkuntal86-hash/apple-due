@@ -1884,17 +1884,7 @@ function printReceipt() {
   const paper=document.querySelector('.rcpt-paper');
   const w=window.open('','_blank','width=700,height=900');
   w.document.write('<html><head><title>Receipt</title>');
-  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue, remove, serverTimestamp }
-    from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-  // Expose to global scope for the main script
-  window._fbMods = { initializeApp, getDatabase, ref, set, get, onValue, remove, serverTimestamp };
-  // Signal ready
-  window.dispatchEvent(new Event('fbReady'));
-</script>');
+  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">');
   w.document.write('<style>body{font-family:"Plus Jakarta Sans",sans-serif;margin:0;padding:20px;background:#fff}');
   w.document.write(document.querySelector('style').textContent);
   w.document.write('</style></head><body>');
