@@ -1121,28 +1121,43 @@ async function doConnect(cfg, silent=false) {
     _connected = false;
     setUI('error');
     const msg = e.message || 'Unknown error';
-    if (!silent) toast('Firebase failed: '+msg.slice(0,60),'err');
     console.error('[FB] Full error:', e);
-    // Show setup overlay so user can fix config
-    if (!silent) {
-      document.getElementById('fbSetupOverlay').classList.remove('hidden');
-    }
+    if (!silent) toast('Firebase failed: '+msg.slice(0,60),'err');
     return false;
   }
 }
 
 /* ── AUTO CONNECT ON PAGE LOAD ── */
 async function autoConnect() {
-  const cfg = (() => { try { return JSON.parse(localStorage.getItem(FB_KEY)); } catch(e){return null;} })();
-  // Always hide setup overlay — config is pre-configured
+  // Always hide overlay immediately - never block the UI
   document.getElementById('fbSetupOverlay').classList.add('hidden');
+  const cfg = (() => { try { return JSON.parse(localStorage.getItem(FB_KEY)); } catch(e){return null;} })();
   if (!cfg || !cfg.apiKey || !cfg.databaseURL) {
     setUI('local');
     return;
   }
-  // Silent auto-reconnect
-  const ok = await doConnect(cfg, true);
-  if (!ok) {
+  setUI('connecting');
+  try {
+    await initFbApp(cfg);
+    const { get } = await waitForSDK();
+    const snap = await get(_fbRef);
+    if (snap.exists()) {
+      const raw = snap.val();
+      entries = Array.isArray(raw) ? raw.filter(Boolean) : Object.values(raw).filter(Boolean);
+      localStorage.setItem('dueEntries', JSON.stringify(entries));
+    } else if (entries.length) {
+      const { set } = await waitForSDK();
+      await set(_fbRef, entries);
+    }
+    _connected = true;
+    startListener();
+    setUI('connected');
+    localStorage.setItem(FB_KEY, JSON.stringify(cfg));
+    toast('🔥 Firebase connected!','ok');
+    refreshAll();
+  } catch(e) {
+    console.error('[FB] AutoConnect failed:', e);
+    _connected = false;
     setUI('local');
     toast('Firebase offline — using local data','');
   }
