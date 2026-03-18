@@ -1913,14 +1913,18 @@ function startListener() {
   // Real-time CC listener
   if (_ccRef) {
     _ccRef.on('value', snap => {
-      if (snap.exists()) {
-        const d = snap.val();
-        if (d.txns)      { ccTxns      = d.txns;      localStorage.setItem('ccTxns',     JSON.stringify(ccTxns)); }
-        if (d.txnPays)   { ccTxnPays   = d.txnPays;   localStorage.setItem('ccTxnPays',  JSON.stringify(ccTxnPays)); }
-        if (d.commPays)  { ccCommPays  = d.commPays;  localStorage.setItem('ccCommPays', JSON.stringify(ccCommPays)); }
-        if (d.commRates) { ccCommRates = d.commRates; localStorage.setItem('ccCommRates',JSON.stringify(ccCommRates)); }
-        renderCCDash();
-      }
+      const d = snap.exists() ? snap.val() : {};
+      // Always apply — including empty arrays (handles clear from another device)
+      ccTxns      = Array.isArray(d.txns)     ? d.txns     : [];
+      ccTxnPays   = Array.isArray(d.txnPays)  ? d.txnPays  : [];
+      ccCommPays  = Array.isArray(d.commPays) ? d.commPays : [];
+      ccCommRates = (d.commRates && typeof d.commRates==='object') ? d.commRates : {};
+      localStorage.setItem('ccTxns',     JSON.stringify(ccTxns));
+      localStorage.setItem('ccTxnPays',  JSON.stringify(ccTxnPays));
+      localStorage.setItem('ccCommPays', JSON.stringify(ccCommPays));
+      localStorage.setItem('ccCommRates',JSON.stringify(ccCommRates));
+      renderCCDash();
+      renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
     });
   }
   // Return unsubscribe function
@@ -4487,9 +4491,20 @@ function clearCCData() {
   if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   if(!confirm('Delete ALL credit card transactions, payments and commission rates? This cannot be undone!')) return;
   ccTxns=[]; ccTxnPays=[]; ccCommPays=[]; ccCommRates={};
-  saveCC();
-  renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
-  toast('CC data cleared','err');
+  // Save locally
+  localStorage.setItem('ccTxns',     '[]');
+  localStorage.setItem('ccTxnPays',  '[]');
+  localStorage.setItem('ccCommPays', '[]');
+  localStorage.setItem('ccCommRates','{}');
+  // Push empty to Firebase — triggers real-time listener on ALL devices
+  if (_connected && _ccRef) {
+    _ccRef.set({ txns:[], txnPays:[], commPays:[], commRates:{} })
+      .then(()=>toast('CC data cleared on all devices','err'))
+      .catch(e=>toast('CC data cleared locally only','err'));
+  } else {
+    toast('CC data cleared','err');
+  }
+  renderCCDash(); renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
 }
 
 function initCCTab() {
