@@ -265,6 +265,17 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 .rcpt-bill-info.show{display:flex;}
 .rcpt-bil-field span{font-size:.65rem;font-family:var(--mono);color:var(--gray-500);letter-spacing:.8px;text-transform:uppercase;display:block;margin-bottom:2px;}
 
+/* ── MONTH REPORT ── */
+#mrMonthTable thead tr,#mrBillTable thead tr{background:var(--blue-900);}
+#mrMonthTable td,#mrBillTable td{padding:10px 13px;border-top:1px solid var(--blue-50);font-size:.85rem;vertical-align:middle;}
+#mrMonthTable tfoot td,#mrBillTable tfoot td{padding:11px 13px;font-weight:800;font-family:var(--mono);background:var(--blue-50);border-top:2px solid var(--blue-200);}
+#mrMonthTable tr:hover td,#mrBillTable tr:hover td{background:var(--blue-50);}
+.mr-month-row{cursor:pointer;}
+.mr-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--blue-100);box-shadow:var(--shadow-sm);padding:16px 18px;}
+.mr-card-label{font-size:.67rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gray-500);font-family:var(--mono);}
+.mr-card-val{font-size:1.5rem;font-weight:800;margin-top:4px;}
+.mr-card-sub{font-size:.72rem;color:var(--gray-500);font-family:var(--mono);margin-top:3px;}
+
 /* ── CUSTOMER LEDGER ── */
 .cl-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--blue-100);box-shadow:var(--shadow-sm);padding:16px 18px;}
 .cl-card-label{font-size:.67rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gray-500);font-family:var(--mono);}
@@ -567,6 +578,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
       <button class="sub-tab" onclick="switchSub('ledger',this)">📒 Ledger</button>
       <button class="sub-tab" onclick="switchSub('tracker',this)">⏰ Due Tracker</button>
       <button class="sub-tab" onclick="switchSub('custledger',this)">📋 Customer Ledger</button>
+      <button class="sub-tab" onclick="switchSub('monthreport',this)">📅 Month Report</button>
     </div>
 
     <!-- ── ADD ENTRY ── -->
@@ -921,6 +933,91 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
       <div id="clEmpty" style="text-align:center;padding:48px;color:var(--gray-500);font-style:italic">
         Select a party to view their full ledger
       </div>
+    </div>
+
+  <!-- ── MONTH WISE REPORT ── -->
+    <div class="sub-panel" id="sub-monthreport">
+
+      <!-- Controls -->
+      <div class="box" style="margin-bottom:18px">
+        <div class="box-head"><span>📅</span><div class="box-title">Month Wise Report</div></div>
+        <div class="box-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div class="f">
+              <label>Year</label>
+              <select id="mrYear" onchange="renderMonthReport()"></select>
+            </div>
+            <div class="f">
+              <label>Month</label>
+              <select id="mrMonth" onchange="renderMonthReport()">
+                <option value="">— All Months —</option>
+                <option value="01">January</option><option value="02">February</option>
+                <option value="03">March</option><option value="04">April</option>
+                <option value="05">May</option><option value="06">June</option>
+                <option value="07">July</option><option value="08">August</option>
+                <option value="09">September</option><option value="10">October</option>
+                <option value="11">November</option><option value="12">December</option>
+              </select>
+            </div>
+            <div class="f">
+              <label>Party</label>
+              <select id="mrParty" onchange="renderMonthReport()">
+                <option value="">— All Parties —</option>
+              </select>
+            </div>
+            <button class="btn btn-blue" onclick="printMonthReport()">🖨️ Print Report</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div id="mrCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px"></div>
+
+      <!-- Month-wise breakdown (when All Months selected) -->
+      <div id="mrMonthBreak" style="display:none;margin-bottom:20px">
+        <div class="box">
+          <div class="box-head"><span>📊</span><div class="box-title">Month-wise Summary</div></div>
+          <div class="box-body" style="padding:0">
+            <div style="overflow-x:auto">
+              <table id="mrMonthTable">
+                <thead><tr>
+                  <th>Month</th><th>Bills</th><th>Billed Amount</th>
+                  <th>Collected</th><th>Balance</th><th>Overdue</th><th>Status</th>
+                </tr></thead>
+                <tbody id="mrMonthBody"></tbody>
+                <tfoot id="mrMonthFoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Bill Table -->
+      <div id="mrDetail" style="display:none">
+        <div class="box">
+          <div class="box-head" style="justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:8px"><span>📋</span><div class="box-title" id="mrDetailTitle">Bills</div></div>
+            <div style="font-family:var(--mono);font-size:.72rem;color:var(--gray-500)" id="mrDetailCount"></div>
+          </div>
+          <div class="box-body" style="padding:0">
+            <div style="overflow-x:auto">
+              <table id="mrBillTable">
+                <thead><tr>
+                  <th>#</th><th>Bill No</th><th>Party</th><th>Bill Date</th>
+                  <th>Due Limit</th><th>Billed</th><th>Collected</th><th>Balance</th><th>Status</th>
+                </tr></thead>
+                <tbody id="mrBillBody"></tbody>
+                <tfoot id="mrBillFoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="mrEmpty" style="text-align:center;padding:48px;color:var(--gray-500);font-style:italic">
+        Select a year to view monthly report
+      </div>
+
     </div>
 
   </div>
@@ -1362,6 +1459,7 @@ function switchSub(id, btn) {
   if (id === 'ledger') renderLedger('');
   if (id === 'tracker') renderTracker('all');
   if (id === 'custledger') { populateCLParty(); renderCustLedger(); }
+  if (id === 'monthreport') { populateMRFilters(); renderMonthReport(); }
 }
 
 /* ── REFRESH ALL ── */
@@ -1375,6 +1473,8 @@ function refreshAll() {
   populateRcptParty();
   populateCLParty();
   renderCustLedger();
+  populateMRFilters();
+  renderMonthReport();
 }
 
 /* ── SUMMARY CARDS ── */
@@ -1892,16 +1992,14 @@ function markPaid(i) {
 
 /* ── EDIT FROM RECEIPT ── */
 function editFromReceipt() {
-  const bill = document.getElementById('rcptBill').value;
+  const bill  = document.getElementById('rcptBill').value;
   const party = document.getElementById('rcptParty').value;
   if (!bill || !party) { toast('Select a bill first','err'); return; }
   const idx = entries.findIndex(e => e.bill === bill && e.party === party);
   if (idx < 0) { toast('Entry not found','err'); return; }
-  // Switch to Others tab
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-others').classList.add('active');
-  document.getElementById('othersTabBtn').classList.add('active');
+  // Remember current receipt context so we can restore after save
+  window._rcptEditParty = party;
+  window._rcptEditBill  = bill;
   openEdit(idx);
 }
 
@@ -1984,7 +2082,37 @@ function saveEdit() {
   e.paid    = paid;
   e.dueDays = parseInt(document.getElementById('eDays').value)||30;
   e.remarks = document.getElementById('eRem').value.trim();
-  closeModal(); refreshAll(); toast('Entry updated — '+bill,'ok');
+  closeModal();
+  refreshAll();
+  // Re-sync receipt dropdowns so Edit → Save → Receipt works
+  const rParty = document.getElementById('rcptParty');
+  const rBill  = document.getElementById('rcptBill');
+  if (rParty) {
+    rParty.value = party;
+    onRcptPartyChange();
+    if (rBill) {
+      rBill.value = bill;
+      onRcptBillChange();
+    }
+  }
+  // If edit was triggered from receipt, switch back to receipt tab and regenerate
+  if (window._rcptEditParty && window._rcptEditBill) {
+    // Switch to receipt sub-tab
+    document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('sub-receipt').classList.add('active');
+    // Find and activate receipt sub-tab button
+    document.querySelectorAll('.sub-tab').forEach(b => {
+      if (b.textContent.includes('Receipt')) b.classList.add('active');
+    });
+    // Set party & bill and regenerate
+    if (rParty) { rParty.value = party; onRcptPartyChange(); }
+    if (rBill)  { rBill.value  = bill;  onRcptBillChange(); }
+    genReceipt();
+    window._rcptEditParty = null;
+    window._rcptEditBill  = null;
+  }
+  toast('Entry updated — '+bill,'ok');
 }
 
 function delFromModal() {
@@ -2145,6 +2273,17 @@ function renderTracker(type) {
   }).join('');
 }
 
+/* ── MONTH REPORT ── */
+#mrMonthTable thead tr,#mrBillTable thead tr{background:var(--blue-900);}
+#mrMonthTable td,#mrBillTable td{padding:10px 13px;border-top:1px solid var(--blue-50);font-size:.85rem;vertical-align:middle;}
+#mrMonthTable tfoot td,#mrBillTable tfoot td{padding:11px 13px;font-weight:800;font-family:var(--mono);background:var(--blue-50);border-top:2px solid var(--blue-200);}
+#mrMonthTable tr:hover td,#mrBillTable tr:hover td{background:var(--blue-50);}
+.mr-month-row{cursor:pointer;}
+.mr-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--blue-100);box-shadow:var(--shadow-sm);padding:16px 18px;}
+.mr-card-label{font-size:.67rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gray-500);font-family:var(--mono);}
+.mr-card-val{font-size:1.5rem;font-weight:800;margin-top:4px;}
+.mr-card-sub{font-size:.72rem;color:var(--gray-500);font-family:var(--mono);margin-top:3px;}
+
 /* ── CUSTOMER LEDGER ── */
 function populateCLParty() {
   const sel = document.getElementById('clParty');
@@ -2284,6 +2423,197 @@ function printCustLedger() {
   setTimeout(() => { w.print(); w.close(); }, 700);
 }
 
+
+/* ── MONTH WISE REPORT ── */
+function populateMRFilters() {
+  // Year dropdown
+  const yrSel = document.getElementById('mrYear');
+  if (!yrSel) return;
+  const curYr = yrSel.value;
+  const years = [...new Set(entries.map(e => e.date ? e.date.slice(0,4) : null).filter(Boolean))].sort().reverse();
+  const thisYear = new Date().getFullYear().toString();
+  if (!years.includes(thisYear)) years.unshift(thisYear);
+  yrSel.innerHTML = '<option value="">— Select Year —</option>' +
+    years.map(y => `<option value="${y}" ${y===(curYr||thisYear)?'selected':''}>${y}</option>`).join('');
+
+  // Party dropdown
+  const ptSel = document.getElementById('mrParty');
+  const curPt = ptSel.value;
+  const parties = [...new Set(entries.map(e => e.party))].sort();
+  ptSel.innerHTML = '<option value="">— All Parties —</option>' +
+    parties.map(p => `<option value="${p}" ${p===curPt?'selected':''}>${p}</option>`).join('');
+}
+
+function renderMonthReport() {
+  const year   = document.getElementById('mrYear').value;
+  const month  = document.getElementById('mrMonth').value;
+  const party  = document.getElementById('mrParty').value;
+  const empty  = document.getElementById('mrEmpty');
+  const cards  = document.getElementById('mrCards');
+  const mBreak = document.getElementById('mrMonthBreak');
+  const detail = document.getElementById('mrDetail');
+
+  if (!year) {
+    empty.style.display='block'; cards.innerHTML='';
+    mBreak.style.display='none'; detail.style.display='none'; return;
+  }
+  empty.style.display = 'none';
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Filter entries
+  let list = entries.filter(e => e.date && e.date.startsWith(year));
+  if (party) list = list.filter(e => e.party === party);
+  if (month) list = list.filter(e => e.date.slice(5,7) === month);
+
+  // Summary cards
+  const totBilled   = list.reduce((s,e) => s + +e.amount, 0);
+  const totCollected= list.reduce((s,e) => s + +e.paid, 0);
+  const totBalance  = totBilled - totCollected;
+  const cPaid  = list.filter(e => (+e.amount-+e.paid)<=0).length;
+  const cOver  = list.filter(e => (+e.amount-+e.paid)>0 && diff(e.date)>e.dueDays).length;
+  const cPend  = list.filter(e => (+e.amount-+e.paid)>0 && diff(e.date)<=e.dueDays).length;
+  const label  = month ? MONTHS[parseInt(month)-1]+' '+year : year;
+
+  cards.innerHTML = `
+    <div class="mr-card"><div class="mr-card-label">Total Billed</div><div class="mr-card-val" style="color:var(--blue-800)">${fmt(totBilled)}</div><div class="mr-card-sub">${list.length} bills · ${label}</div></div>
+    <div class="mr-card"><div class="mr-card-label">Collected</div><div class="mr-card-val" style="color:var(--green)">${fmt(totCollected)}</div><div class="mr-card-sub">${cPaid} fully paid</div></div>
+    <div class="mr-card"><div class="mr-card-label">Outstanding</div><div class="mr-card-val" style="color:${totBalance>0?'var(--red)':'var(--green)'}">${fmt(totBalance)}</div><div class="mr-card-sub">${cPend} pending · ${cOver} overdue</div></div>
+    <div class="mr-card"><div class="mr-card-label">Collection %</div><div class="mr-card-val" style="color:var(--blue-700)">${totBilled>0?Math.round(totCollected/totBilled*100):0}%</div><div class="mr-card-sub">of total billed</div></div>
+  `;
+
+  // Month breakdown (only when all months selected)
+  if (!month) {
+    mBreak.style.display = 'block';
+    const monthData = {};
+    list.forEach(e => {
+      const m = e.date.slice(5,7);
+      if (!monthData[m]) monthData[m] = {bills:0,billed:0,collected:0,overdue:0};
+      const b = +e.amount - +e.paid;
+      const ov = b>0 && diff(e.date)>e.dueDays;
+      monthData[m].bills++;
+      monthData[m].billed     += +e.amount;
+      monthData[m].collected  += +e.paid;
+      if (ov) monthData[m].overdue++;
+    });
+
+    let totB=0,totC=0,totBills=0,totOv=0;
+    const months = Object.keys(monthData).sort();
+    document.getElementById('mrMonthBody').innerHTML = months.map(m => {
+      const d = monthData[m];
+      const bal = d.billed - d.collected;
+      const pct = d.billed>0?Math.round(d.collected/d.billed*100):0;
+      totB+=d.billed; totC+=d.collected; totBills+=d.bills; totOv+=d.overdue;
+      return `<tr class="mr-month-row" onclick="drillMonth('${year}','${m}','${party}')">
+        <td style="font-weight:700;color:var(--blue-700)">${MONTHS[parseInt(m)-1]} ${year}</td>
+        <td style="font-family:var(--mono)">${d.bills}</td>
+        <td class="mono c-red">${fmt(d.billed)}</td>
+        <td class="mono c-green">${fmt(d.collected)}</td>
+        <td class="mono ${bal>0?'c-red':'c-green'}">${fmt(bal)}</td>
+        <td>${d.overdue>0?`<span class="badge b-overdue">${d.overdue}</span>`:'<span class="badge b-ok">0</span>'}</td>
+        <td><div style="background:var(--gray-200);border-radius:99px;height:8px;width:100px;overflow:hidden"><div style="background:var(--green);height:100%;width:${pct}%;border-radius:99px"></div></div><span style="font-family:var(--mono);font-size:.7rem;color:var(--gray-500);margin-left:6px">${pct}%</span></td>
+      </tr>`;
+    }).join('');
+
+    const totBal = totB-totC;
+    document.getElementById('mrMonthFoot').innerHTML = `<tr>
+      <td>TOTAL</td><td style="font-family:var(--mono)">${totBills}</td>
+      <td class="mono c-red">${fmt(totB)}</td><td class="mono c-green">${fmt(totC)}</td>
+      <td class="mono ${totBal>0?'c-red':'c-green'}">${fmt(totBal)}</td>
+      <td style="font-family:var(--mono)">${totOv}</td><td></td>
+    </tr>`;
+  } else {
+    mBreak.style.display = 'none';
+  }
+
+  // Detailed bill table
+  if (list.length) {
+    detail.style.display = 'block';
+    const mLabel = month ? MONTHS[parseInt(month)-1]+' '+year : year;
+    document.getElementById('mrDetailTitle').textContent = (party||'All Parties') + ' — ' + mLabel;
+    document.getElementById('mrDetailCount').textContent = list.length + ' bill' + (list.length>1?'s':'');
+
+    let tB=0,tC=0;
+    document.getElementById('mrBillBody').innerHTML = list.map((e,i) => {
+      const b = +e.amount - +e.paid;
+      const ov = diff(e.date) > e.dueDays;
+      const sc = b<=0?'b-paid':(ov?'b-overdue':'b-pending');
+      const sl = b<=0?'PAID':(ov?'OVERDUE':'PENDING');
+      tB += +e.amount; tC += +e.paid;
+      return `<tr>
+        <td style="color:var(--gray-500);font-size:.75rem">${i+1}</td>
+        <td class="b-no">${e.bill}</td>
+        <td class="p-name">${e.party}</td>
+        <td style="font-family:var(--mono);font-size:.78rem">${e.date}</td>
+        <td style="font-family:var(--mono)">${e.dueDays}d</td>
+        <td class="mono c-red">${fmt(e.amount)}</td>
+        <td class="mono c-green">${fmt(e.paid)}</td>
+        <td class="mono ${b>0?'c-red':'c-green'}">${fmt(b)}</td>
+        <td><span class="badge ${sc}">${sl}</span></td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('mrBillFoot').innerHTML = `<tr>
+      <td colspan="5" style="text-align:right">TOTAL</td>
+      <td class="mono c-red">${fmt(tB)}</td>
+      <td class="mono c-green">${fmt(tC)}</td>
+      <td class="mono ${(tB-tC)>0?'c-red':'c-green'}">${fmt(tB-tC)}</td>
+      <td></td>
+    </tr>`;
+  } else {
+    detail.style.display = 'none';
+  }
+}
+
+function drillMonth(year, month, party) {
+  document.getElementById('mrYear').value  = year;
+  document.getElementById('mrMonth').value = month;
+  if (party) document.getElementById('mrParty').value = party;
+  renderMonthReport();
+}
+
+function printMonthReport() {
+  const year  = document.getElementById('mrYear').value;
+  const month = document.getElementById('mrMonth').value;
+  const party = document.getElementById('mrParty').value;
+  if (!year) { toast('Select a year first','err'); return; }
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const label = month ? MONTHS[parseInt(month)-1]+' '+year : 'Full Year '+year;
+  const partyLabel = party || 'All Parties';
+  const w = window.open('','_blank','width=960,height=900');
+  w.document.write(`<html><head><title>Month Report - ${label}</title>`);
+  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">');
+  w.document.write('<style>body{font-family:"Plus Jakarta Sans",sans-serif;margin:0;padding:24px;background:#fff;color:#0f172a}');
+  w.document.write(document.querySelector('style').textContent);
+  w.document.write('.print-header{background:linear-gradient(135deg,#1a3066,#1e4db7);color:#fff;padding:20px 28px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}');
+  w.document.write('.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}');
+  w.document.write('.mr-card{background:#fff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px}');
+  w.document.write('.mr-card-label{font-size:.63rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-family:"JetBrains Mono",monospace}');
+  w.document.write('.mr-card-val{font-size:1.3rem;font-weight:800;margin-top:4px}.mr-card-sub{font-size:.7rem;color:#64748b;font-family:"JetBrains Mono",monospace;margin-top:2px}');
+  w.document.write('.box{border:1.5px solid #bfdbfe;border-radius:12px;overflow:hidden;margin-bottom:20px}');
+  w.document.write('.box-head{background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:12px 18px;display:flex;align-items:center;gap:8px}');
+  w.document.write('.box-title{font-size:.95rem;font-weight:700;color:#1e4db7}');
+  w.document.write('table{width:100%;border-collapse:collapse;font-size:.83rem}thead tr{background:#0c1e4a}');
+  w.document.write('th{padding:10px 12px;text-align:left;font-family:"JetBrains Mono",monospace;font-size:.63rem;letter-spacing:1px;color:rgba(255,255,255,.75);text-transform:uppercase}');
+  w.document.write('td{padding:10px 12px;border-top:1px solid #eff6ff;vertical-align:middle}');
+  w.document.write('tfoot td{padding:10px 12px;font-weight:800;font-family:"JetBrains Mono",monospace;background:#eff6ff;border-top:2px solid #bfdbfe}');
+  w.document.write('.mono{font-family:"JetBrains Mono",monospace;font-weight:600}.c-red{color:#dc2626}.c-green{color:#16a34a}.b-no{font-family:"JetBrains Mono",monospace;font-size:.8rem;color:#2563eb}.p-name{font-weight:700;color:#1e3a8a}');
+  w.document.write('.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;font-family:"JetBrains Mono",monospace}');
+  w.document.write('.b-paid{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}.b-overdue{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}.b-pending{background:#fffbeb;color:#d97706;border:1px solid #fde68a}.b-ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}');
+  w.document.write('@media print{body{padding:12px}}</style></head><body>');
+  const now = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  w.document.write(`<div class="print-header"><div><div style="font-size:1.4rem;font-weight:800;letter-spacing:-.3px">Due<span style="color:#93c5fd">Ledger</span></div><div style="font-size:.65rem;color:rgba(255,255,255,.5);letter-spacing:1.5px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-top:2px">MONTH WISE REPORT</div></div><div style="text-align:right"><div style="font-size:1.1rem;font-weight:800">${label} · ${partyLabel}</div><div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:3px">${now}</div></div></div>`);
+  w.document.write('<div class="summary-grid">'+document.getElementById('mrCards').innerHTML+'</div>');
+  const mb = document.getElementById('mrMonthBreak');
+  if (mb.style.display !== 'none') w.document.write(mb.outerHTML);
+  const det = document.getElementById('mrDetail');
+  if (det.style.display !== 'none') w.document.write(det.outerHTML);
+  w.document.write('<div style="text-align:center;font-family:JetBrains Mono,monospace;font-size:.62rem;color:#94a3b8;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0">Generated by DueLedger · Due Maintenance Software · '+new Date().toLocaleString('en-IN')+'</div>');
+  w.document.write('</body></html>');
+  w.document.close(); w.focus();
+  setTimeout(()=>{w.print();w.close();},700);
+}
+
 /* ── INIT ── */
 try {
   document.getElementById('hDate').textContent =
@@ -2299,7 +2629,7 @@ try {
 
   // Initial render (data may update again once Firebase connects)
   updateSummary(); renderDashboard(); renderLedger(''); renderTracker('all');
-  populatePayParty(); populateRcptParty(); populateCLParty();
+  populatePayParty(); populateRcptParty(); populateCLParty(); populateMRFilters();
 } catch(initErr) {
   console.error('[INIT] Error during page init:', initErr);
 }
