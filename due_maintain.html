@@ -2149,7 +2149,10 @@ function onRcptPartyChange() {
   billSel.innerHTML='<option value="">— Choose Bill —</option>'+
     bills.map(e=>{
       const b=+e.amount-+e.paid;
-      const st=b<=0?'✅ PAID':(diff(e.date)>e.dueDays?'🔴 OD':'🟡 DUE');
+      const isPaid=b<=0;
+      const isOD=!isPaid&&diff(e.date)>e.dueDays;
+      const isPartial=!isPaid&&+e.paid>0;
+      const st=isPaid?'✅ PAID':(isOD?(isPartial?'🟠 PARTIAL+OD':'🔴 OD'):(isPartial?'🟠 PARTIAL':'🟡 DUE'));
       return `<option value="${e.bill}">${e.bill} — ${st} — Bal: ${fmt(b)}</option>`;
     }).join('');
 }
@@ -2193,13 +2196,15 @@ function genReceipt() {
       <td>Due against bill <strong>${e.bill}</strong></td>
       <td style="font-family:var(--mono);font-size:.8rem">${e.date}</td>
       <td style="font-family:var(--mono)">${e.dueDays}d</td>
-      <td><span class="badge ${el>e.dueDays?'b-danger':(el>15?'b-warn':'b-ok')}">${el}d${ov>0?' (+'+ov+'d OD)':''}</span></td>
+      <td><span class="badge ${b<=0?'b-ok':(el>e.dueDays?'b-danger':(el>15?'b-warn':'b-ok'))}">${el}d${(ov>0&&b>0)?' (+'+ov+'d OD)':''}</span></td>
       <td class="num c-red">${fmt(e.amount)}</td>
     </tr>`;
   const chip=document.getElementById('riStatusChip');
-  if (b<=0)    { chip.textContent='✅  FULLY PAID'; chip.className='rcpt-status-chip chip-paid'; }
-  else if(ov>0){ chip.textContent='⚠️  OVERDUE BY '+ov+' DAYS'; chip.className='rcpt-status-chip chip-due'; }
-  else         { chip.textContent='🕐  PAYMENT PENDING'; chip.className='rcpt-status-chip chip-due'; }
+  if (b<=0)         { chip.textContent='✅  FULLY PAID'; chip.className='rcpt-status-chip chip-paid'; }
+  else if(ov>0&&+e.paid>0){ chip.textContent='⚠️  PARTIAL PAYMENT — '+ov+'d OVERDUE'; chip.className='rcpt-status-chip chip-due'; }
+  else if(ov>0)     { chip.textContent='⚠️  OVERDUE BY '+ov+' DAYS'; chip.className='rcpt-status-chip chip-due'; }
+  else if(+e.paid>0){ chip.textContent='🟠  PARTIAL PAYMENT — PENDING BALANCE'; chip.className='rcpt-status-chip chip-due'; }
+  else              { chip.textContent='🕐  PAYMENT PENDING'; chip.className='rcpt-status-chip chip-due'; }
   const hist=e.payments&&e.payments.length?e.payments:[];
   const hEl=document.getElementById('riPayHist');
   if (hist.length) {
@@ -2306,18 +2311,26 @@ function renderCustLedger() {
   let runBal = 0;
   tbody.innerHTML = bills.map((e, i) => {
     const b = +e.amount - +e.paid;
-    const el = diff(e.date), ov = Math.max(0, el - e.dueDays);
-    const sc = b<=0?'b-paid':(ov>0?'b-overdue':'b-pending');
-    const sl = b<=0?'PAID':(ov>0?'OVERDUE':'PENDING');
     const lastPay = e.payments && e.payments.length ? e.payments[e.payments.length-1] : null;
     const payDate = lastPay ? lastPay.date : (e.paid>0 ? '—' : '—');
     const payMode = lastPay ? (lastPay.mode||'Cash') : (e.paid>0 ? 'Cash' : '—');
+    // For paid bills, measure overdue against payment date; for unpaid, against today
+    const isPaid = b <= 0;
+    const refDate = isPaid && lastPay && lastPay.date ? lastPay.date : null;
+    const el = refDate
+      ? Math.floor((new Date(refDate) - new Date(e.date)) / 86400000)
+      : diff(e.date);
+    const ov = Math.max(0, el - e.dueDays);
+    // Only show OD badge if bill was NOT fully paid on time
+    const showOD = ov > 0 && !isPaid;
+    const sc = isPaid?'b-paid':(ov>0?'b-overdue':'b-pending');
+    const sl = isPaid?'PAID':(ov>0?'OVERDUE':'PENDING');
     runBal += b;
     return `<tr>
       <td style="color:var(--gray-500);font-size:.75rem">${i+1}</td>
       <td class="b-no">${e.bill}</td>
       <td style="font-family:var(--mono);font-size:.78rem">${e.date}</td>
-      <td style="font-family:var(--mono)">${e.dueDays}d${ov>0?` <span class="badge b-danger" style="font-size:.6rem">+${ov}d OD</span>`:''}</td>
+      <td style="font-family:var(--mono)">${e.dueDays}d${showOD?` <span class="badge b-danger" style="font-size:.6rem">+${ov}d OD</span>`:''}</td>
       <td class="mono c-red">${fmt(e.amount)}</td>
       <td class="mono c-green">${fmt(e.paid)}</td>
       <td class="mono ${b>0?'c-red':'c-green'}">${fmt(b)}</td>
