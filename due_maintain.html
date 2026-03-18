@@ -653,7 +653,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
               <span id="bulkStats" style="font-size:.76rem;font-family:var(--mono);color:var(--gray-500);margin-left:10px"></span>
             </div>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-blue" onclick="confirmBulkImport()" id="bulkImportBtn">✅ Import Valid Rows</button>
+              <button class="btn btn-blue" onclick="if(!this.disabled)confirmBulkImport()" id="bulkImportBtn">✅ Import Valid Rows</button>
               <button class="btn btn-outline btn-sm" onclick="clearBulkPreview()">✕ Clear</button>
             </div>
           </div>
@@ -2794,7 +2794,7 @@ function handleBulkFile(file) {
           if (amount<=0) err.push('Amount > 0 required');
           const isDup = bill && entries.some(e=>e.bill===bill);
           const finalBill = bill||('AUTO-'+Date.now()+'-'+i);
-          _bulkRows.push({rowNum:i,party,bill,finalBill,date,amount,paid,payDate,payMode,dueDays,remarks,initPay,err,isDup});
+          _bulkRows.push({rowNum:i,party,bill,finalBill,date,amount,paid,payDate,payMode,dueDays,remarks,initPay:initPay||[],err,isDup});
         }
       }
 
@@ -2919,50 +2919,56 @@ function confirmBulkImport() {
   const validPays=_bulkPayRows.filter(r=>!r.err.length);
   if(!validBills.length&&!validPays.length){toast('No valid rows to import','err');return;}
 
-  // Build a map of bill→id for newly added bills (so payments can reference them)
+  // Build a map for newly added bills so payments can reference them
   const newBillMap={};
   let addedB=0;
   validBills.forEach(r=>{
-    const id=Date.now()+Math.random();
-    const newEntry={id,party:r.party,bill:r.finalBill,date:r.date,amount:r.amount,
-      paid:r.paid,dueDays:r.dueDays,remarks:r.remarks,payments:[...r.initPay]};
+    const id = Date.now() + addedB; // integer id, unique per loop
+    const newEntry={
+      id, party:r.party, bill:r.finalBill, date:r.date,
+      amount:r.amount, paid:r.paid, dueDays:r.dueDays,
+      remarks:r.remarks, payments: r.initPay ? [...r.initPay] : []
+    };
     entries.push(newEntry);
-    newBillMap[r.finalBill]=entries[entries.length-1];
-    if(r.bill) newBillMap[r.bill]=entries[entries.length-1];
-    newBillMap[r.party+'|'+r.date]=entries[entries.length-1];
+    const ref = entries[entries.length-1];
+    newBillMap[r.finalBill] = ref;
+    if(r.bill) newBillMap[r.bill] = ref;
+    newBillMap[r.party+'|'+r.date] = ref;
     addedB++;
   });
 
-  // Apply payments sheet rows
+  // Apply payment rows — match by party+billDate, fallback to bill number
   let addedP=0;
   validPays.forEach(p=>{
-    // Match by party+billDate first, then by bill number fallback
-    let entry = entries.find(e=>e.party===p.party && e.date===p.billDate);
-    if(!entry && p.bill) entry = entries.find(e=>e.bill===p.bill);
+    let entry = entries.find(e => e.party===p.party && e.date===p.billDate);
+    if(!entry && p.bill) entry = entries.find(e => e.bill===p.bill);
     if(!entry && p.bill) entry = newBillMap[p.bill];
     if(!entry) entry = newBillMap[p.party+'|'+p.billDate];
     if(!entry) return;
-    const b=+entry.amount-+entry.paid;
-    const actual=Math.min(p.amount,b);
-    if(actual<=0) return;
-    entry.paid=+entry.paid+actual;
-    if(!entry.payments) entry.payments=[];
-    entry.payments.push({date:p.date,amount:actual,mode:p.mode});
+    const b = +entry.amount - +entry.paid;
+    const actual = Math.min(p.amount, b);
+    if(actual <= 0) return;
+    entry.paid = +entry.paid + actual;
+    if(!entry.payments) entry.payments = [];
+    entry.payments.push({date: p.payDate, amount: actual, mode: p.mode}); // fixed: p.payDate not p.date
     addedP++;
   });
 
   refreshAll();
-  const rc=document.getElementById('bulkResultCard');
+
+  const rc = document.getElementById('bulkResultCard');
   rc.style.display='block'; rc.style.background='var(--green-bg)'; rc.style.border='1.5px solid var(--green-bd)';
-  let msg='';
-  if(addedB) msg+=addedB+' bill'+(addedB!==1?'s':'')+' imported';
-  if(addedP) msg+=(msg?' · ':'')+addedP+' payment'+(addedP!==1?'s':'')+' recorded';
-  rc.innerHTML='<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.4rem">✅</span>'
+  let msg = '';
+  if(addedB) msg += addedB+' bill'+(addedB!==1?'s':'')+' imported';
+  if(addedP) msg += (msg?' · ':'')+addedP+' payment'+(addedP!==1?'s':'')+' recorded';
+  if(!msg) msg = 'Nothing to import';
+  rc.innerHTML = '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.4rem">✅</span>'
     +'<div><div style="font-weight:800;color:var(--green);font-size:.92rem">'+msg+' successfully!</div>'
     +'<div style="font-size:.75rem;font-family:var(--mono);color:var(--gray-500);margin-top:2px">All records saved to DueLedger</div></div></div>';
+
   _bulkRows=[]; _bulkPayRows=[];
-  setTimeout(()=>{renderBulkPreview();},2500);
-  toast(msg,'ok');
+  setTimeout(()=>{ renderBulkPreview(); }, 2500);
+  toast(msg, 'ok');
 }
 
 function clearBulkPreview() {
