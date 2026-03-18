@@ -1765,7 +1765,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
       <div class="tbl-card">
         <div style="overflow-x:auto">
           <table>
-            <thead><tr><th>Party</th><th>Txns</th><th>Txn Amount</th><th>Txn Received</th><th>Txn Balance</th><th>Comm %</th><th>Commission</th><th>Comm Paid</th><th>Comm Balance</th><th>Status</th></tr></thead>
+            <thead><tr><th>Party</th><th>Txns</th><th>Txn Amt</th><th>Txn Rcvd</th><th>Txn Bal</th><th>Comm%</th><th>Comm</th><th>Comm Paid</th><th>Comm Bal</th><th>Status</th></tr></thead>
             <tbody id="ccSumBody"></tbody>
             <tfoot id="ccSumFoot"></tfoot>
           </table>
@@ -1791,6 +1791,7 @@ let entries  = JSON.parse(localStorage.getItem('dueEntries') || '[]');
 let editIdx  = -1;
 let _db      = null;
 let _fbRef   = null;
+let _ccRef   = null;
 let _connected = false;
 let _fbApp   = null;
 let _unsubscribe = null;
@@ -1873,7 +1874,7 @@ async function initFbApp(cfg) {
   // Delete old app if exists
   if (_fbApp) {
     try { await _fbApp.delete(); } catch(e) {}
-    _fbApp = null; _db = null; _fbRef = null;
+    _fbApp = null; _db = null; _fbRef = null; _ccRef = null;
   }
   // Delete any lingering named app
   const existing = (window.firebase.apps||[]).find(a=>a.name==='dueledger');
@@ -1882,6 +1883,7 @@ async function initFbApp(cfg) {
   _fbApp = window.firebase.initializeApp(cfg, 'dueledger');
   _db    = _fbApp.database();
   _fbRef = _db.ref('dueledger/entries');
+  _ccRef = _db.ref('dueledger/cc');
 }
 
 /* ── REAL-TIME LISTENER (compat) ── */
@@ -1908,8 +1910,21 @@ function startListener() {
     setUI('error');
     _connected = false;
   });
+  // Real-time CC listener
+  if (_ccRef) {
+    _ccRef.on('value', snap => {
+      if (snap.exists()) {
+        const d = snap.val();
+        if (d.txns)      { ccTxns      = d.txns;      localStorage.setItem('ccTxns',     JSON.stringify(ccTxns)); }
+        if (d.txnPays)   { ccTxnPays   = d.txnPays;   localStorage.setItem('ccTxnPays',  JSON.stringify(ccTxnPays)); }
+        if (d.commPays)  { ccCommPays  = d.commPays;  localStorage.setItem('ccCommPays', JSON.stringify(ccCommPays)); }
+        if (d.commRates) { ccCommRates = d.commRates; localStorage.setItem('ccCommRates',JSON.stringify(ccCommRates)); }
+        renderCCDash();
+      }
+    });
+  }
   // Return unsubscribe function
-  _unsubscribe = () => _fbRef.off('value');
+  _unsubscribe = () => { _fbRef.off('value'); if(_ccRef) _ccRef.off('value'); };
 }
 
 /* ── SYNC PULSE (visual feedback) ── */
@@ -1935,6 +1950,20 @@ async function doConnect(cfg, silent=false) {
     }
     _connected = true;
     startListener();
+    // Load CC data from Firebase
+    if (_ccRef) {
+      const ccSnap = await _ccRef.once('value');
+      if (ccSnap.exists()) {
+        const ccData = ccSnap.val();
+        if (ccData.txns)      { ccTxns      = ccData.txns;      localStorage.setItem('ccTxns',     JSON.stringify(ccTxns)); }
+        if (ccData.txnPays)   { ccTxnPays   = ccData.txnPays;   localStorage.setItem('ccTxnPays',  JSON.stringify(ccTxnPays)); }
+        if (ccData.commPays)  { ccCommPays  = ccData.commPays;  localStorage.setItem('ccCommPays', JSON.stringify(ccCommPays)); }
+        if (ccData.commRates) { ccCommRates = ccData.commRates; localStorage.setItem('ccCommRates',JSON.stringify(ccCommRates)); }
+      } else if (ccTxns.length || ccTxnPays.length || ccCommPays.length) {
+        // Push local CC data to Firebase
+        _ccRef.set({ txns:ccTxns, txnPays:ccTxnPays, commPays:ccCommPays, commRates:ccCommRates });
+      }
+    }
     setUI('connected');
     localStorage.setItem(FB_KEY, JSON.stringify(cfg));
     if (!silent) toast('🔥 Firebase connected!','ok');
@@ -4037,6 +4066,11 @@ function saveCC() {
   localStorage.setItem('ccTxnPays',  JSON.stringify(ccTxnPays));
   localStorage.setItem('ccCommPays', JSON.stringify(ccCommPays));
   localStorage.setItem('ccCommRates',JSON.stringify(ccCommRates));
+  // Sync to Firebase
+  if (_connected && _ccRef) {
+    _ccRef.set({ txns:ccTxns, txnPays:ccTxnPays, commPays:ccCommPays, commRates:ccCommRates })
+      .catch(e => console.warn('[FB] CC save failed:', e.message));
+  }
 }
 
 function ccSub(id, btn) {
