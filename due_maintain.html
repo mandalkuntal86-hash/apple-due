@@ -594,6 +594,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
             <div class="f"><label>Bill Date *</label><input type="date" id="fDate"></div>
             <div class="f"><label>Due Amount (₹) *</label><input type="number" id="fAmt" placeholder="0.00" min="0"></div>
             <div class="f"><label>Paid Amount (₹)</label><input type="number" id="fPaid" placeholder="0.00" value="0" min="0"></div>
+            <div class="f"><label>Payment Date</label><input type="date" id="fPayDate" title="Date of initial payment (if Paid Amount > 0)"></div>
             <div class="f"><label>Due Days Limit</label><input type="number" id="fDays" value="30" min="1"></div>
             <div class="f" style="grid-column:1/-1"><label>Remarks</label><input type="text" id="fRem" placeholder="Optional note…"></div>
           </div>
@@ -656,16 +657,30 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
               <button class="btn btn-outline btn-sm" onclick="clearBulkPreview()">✕ Clear</button>
             </div>
           </div>
+          <!-- Bills preview -->
+          <div style="font-size:.8rem;font-weight:700;color:var(--blue-700);font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">📋 Bills</div>
           <div class="bulk-preview">
             <table id="bulkTable">
               <thead>
                 <tr>
                   <th>#</th><th>Party Name</th><th>Bill No</th><th>Bill Date</th>
-                  <th>Due Amount</th><th>Paid Amount</th><th>Due Days</th><th>Remarks</th><th>Status</th>
+                  <th>Due Amount</th><th>Paid (Date · Mode)</th><th>Due Days</th><th>Remarks</th><th>Status</th>
                 </tr>
               </thead>
               <tbody id="bulkBody"></tbody>
             </table>
+          </div>
+          <!-- Payments preview (hidden until payments sheet found) -->
+          <div id="bulkPayTableWrap" style="display:none;margin-top:18px">
+            <div style="font-size:.8rem;font-weight:700;color:var(--blue-700);font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">💳 Payments (Multiple Receipts)</div>
+            <div class="bulk-preview">
+              <table>
+                <thead>
+                  <tr><th>#</th><th>Party Name</th><th>Bill Date</th><th>Bill No</th><th>Payment Date</th><th>Amount</th><th>Mode</th><th>Remarks</th><th>Bill Source</th><th>Status</th></tr>
+                </thead>
+                <tbody id="bulkPayBody"></tbody>
+              </table>
+            </div>
           </div>
           <!-- Import result card -->
           <div id="bulkResultCard" style="display:none;margin-top:14px;border-radius:10px;padding:14px 16px"></div>
@@ -687,7 +702,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
               </select>
             </div>
             <div class="f">
-              <label>② Select Bill Number *</label>
+              <label>② Select Bill Date *</label>
               <select id="payBillNo" onchange="onPayBillNoChange()" disabled style="opacity:.5">
                 <option value="">— Select Party First —</option>
               </select>
@@ -711,7 +726,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
                 <span style="font-family:var(--mono);font-weight:800;font-size:1rem;color:#fff" id="payStripBill">—</span>
                 <span id="payStripStatus" class="badge"></span>
               </div>
-              <span style="font-size:.7rem;color:rgba(255,255,255,.6);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase">Bill Details (Auto Fetched)</span>
+              <span style="font-size:.7rem;color:rgba(255,255,255,.6);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase">Bill Details — by Date</span>
             </div>
             <div style="background:var(--white);border:1.5px solid var(--blue-200);border-top:none;border-radius:0 0 12px 12px;padding:18px">
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px">
@@ -806,7 +821,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
               </select>
             </div>
             <div class="f">
-              <label>Select Bill *</label>
+              <label>Select Bill Date *</label>
               <select id="rcptBill" onchange="onRcptBillChange()">
                 <option value="">— Choose Bill —</option>
               </select>
@@ -1644,15 +1659,19 @@ function addEntry() {
   const amount = parseFloat(document.getElementById('fAmt').value)||0;
   const paid   = parseFloat(document.getElementById('fPaid').value)||0;
   const dueDays= parseInt(document.getElementById('fDays').value)||30;
-  const remarks= document.getElementById('fRem').value.trim();
+  const remarks   = document.getElementById('fRem').value.trim();
+  const payDate   = document.getElementById('fPayDate').value;
   if (!party||!date||amount<=0) { toast('Fill Party, Date & Amount!','err'); return; }
   const finalBill = bill || ('AUTO-' + Date.now());
   if (bill && entries.find(e=>e.bill===bill)) { toast('Bill No already exists!','err'); return; }
-  const newEntry = {id:Date.now(),party,bill:finalBill,date,amount,paid,dueDays,remarks,payments:[]};
+  const initPayments = (paid > 0)
+    ? [{date: payDate || date, amount: paid, mode: 'Cash'}]
+    : [];
+  const newEntry = {id:Date.now(),party,bill:finalBill,date,amount,paid,dueDays,remarks,payments:initPayments};
   entries.push(newEntry);
   window._lastAddedId = newEntry.id;
   refreshAll();
-  ['fParty','fBill','fAmt','fRem'].forEach(id=>document.getElementById(id).value='');
+  ['fParty','fBill','fAmt','fRem','fPayDate'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fPaid').value='0';
   document.getElementById('fDays').value='30';
   document.getElementById('fDate').value=today();
@@ -1696,14 +1715,15 @@ function onPayPartyChange() {
 
   if (!party) return;
 
-  const pending = entries.filter(e=>e.party===party&&(+e.amount-+e.paid)>0);
+  const pending = entries.filter(e=>e.party===party&&(+e.amount-+e.paid)>0)
+    .sort((a,b)=>new Date(a.date)-new Date(b.date));
   if (!pending.length) { toast('No pending bills for this party!','err'); return; }
 
-  // populate bill number dropdown
-  billSel.innerHTML = '<option value="">— Choose Bill Number —</option>' +
+  // populate bill date dropdown
+  billSel.innerHTML = '<option value="">— Choose Bill Date —</option>' +
     pending.map(e => {
       const b=+e.amount-+e.paid, el=diff(e.date), ov=el>e.dueDays;
-      return `<option value="${e.id}">${e.bill}${ov?' ⚠️':''} | Bal: ${fmt(b)} | ${el}d elapsed</option>`;
+      return `<option value="${e.id}">${e.date}${ov?' ⚠️':''} | ${e.bill?e.bill+' | ':''} Bal: ${fmt(b)} | ${el}d elapsed</option>`;
     }).join('') +
     `<option value="ALL">📋 All Bills (${pending.length})</option>`;
   billSel.disabled = false;
@@ -1711,7 +1731,7 @@ function onPayPartyChange() {
   // Update empty state message
   const emMsg = document.getElementById('payEmptyMsg');
   const emSub = document.getElementById('payEmptySubMsg');
-  if (emMsg) emMsg.textContent = party + ' — Now select a Bill Number above';
+  if (emMsg) emMsg.textContent = party + ' — Now select a Bill Date above';
   if (emSub) emSub.textContent = pending.length + ' pending bill'+(pending.length>1?'s':'') + ' available';
 }
 
@@ -1729,7 +1749,7 @@ function onPayBillNoChange() {
   if (val === 'ALL') {
     // Show all bills
     strip.style.display='none';
-    document.getElementById('payPartyTitle').textContent = '📋 '+party+' — All '+pending.length+' Pending Bill'+(pending.length>1?'s':'');
+    document.getElementById('payPartyTitle').textContent = '📋 '+party+' — '+pending.length+' Pending Bill'+(pending.length>1?'s':'')+' (by Date)';
     renderBillCards(pending);
     area.style.display='block'; empty.style.display='none';
   } else {
@@ -1739,7 +1759,7 @@ function onPayBillNoChange() {
     const b=+e.amount-+e.paid, el=diff(e.date), ov=el>e.dueDays;
 
     // Update auto-fill strip
-    document.getElementById('payStripBill').textContent   = e.bill;
+    document.getElementById('payStripBill').textContent   = e.date + (e.bill?' · '+e.bill:'');
     document.getElementById('payStripParty').textContent  = e.party;
     document.getElementById('payStripDate').textContent   = e.date;
     document.getElementById('payStripDue').textContent    = fmt(e.amount);
@@ -1755,7 +1775,7 @@ function onPayBillNoChange() {
     else         { chip.textContent='🟡 PENDING'; chip.className='badge b-pending'; }
     strip.style.display='block';
 
-    document.getElementById('payPartyTitle').textContent = '📋 '+e.bill+' — Payment Entry';
+    document.getElementById('payPartyTitle').textContent = '📋 '+e.date+(e.bill?' · '+e.bill:'')+' — Payment Entry';
     renderBillCards([e]);
     // auto-open & select the single card
     setTimeout(()=>{ toggleBillCard(String(e.id)); },50);
@@ -1774,9 +1794,9 @@ function renderBillCards(pending) {
           <div class="bpc-checkbox" id="bchk-${e.id}"></div>
           <div>
             <div style="display:flex;align-items:center">
-              <span class="bpc-bill-no">${e.bill}</span>${odLabel}
+              <span class="bpc-bill-no">${e.date}</span>${odLabel}
             </div>
-            <div class="bpc-date">${e.date} · ${el} days elapsed</div>
+            <div class="bpc-date">${e.bill?e.bill+' · ':''} ${el} days elapsed</div>
           </div>
         </div>
         <div class="bpc-right">
@@ -2208,15 +2228,15 @@ function onRcptPartyChange() {
   document.getElementById('rcptBillInfo').classList.remove('show');
   document.getElementById('rcptOut').classList.remove('show');
   if (!party) { billSel.innerHTML='<option value="">— Choose Bill —</option>'; return; }
-  const bills=entries.filter(e=>e.party===party);
-  billSel.innerHTML='<option value="">— Choose Bill —</option>'+
+  const bills=entries.filter(e=>e.party===party).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  billSel.innerHTML='<option value="">— Choose Bill Date —</option>'+
     bills.map(e=>{
       const b=+e.amount-+e.paid;
       const isPaid=b<=0;
       const isOD=!isPaid&&diff(e.date)>e.dueDays;
       const isPartial=!isPaid&&+e.paid>0;
       const st=isPaid?'✅ PAID':(isOD?(isPartial?'🟠 PARTIAL+OD':'🔴 OD'):(isPartial?'🟠 PARTIAL':'🟡 DUE'));
-      return `<option value="${e.bill}">${e.bill} — ${st} — Bal: ${fmt(b)}</option>`;
+      return `<option value="${e.bill}">${e.date}${e.bill?' | '+e.bill:''} — ${st} — Bal: ${fmt(b)}</option>`;
     }).join('');
 }
 
@@ -2677,160 +2697,276 @@ let _bulkRows = [];
 function downloadBulkTemplate() {
   if (!window.XLSX) { toast('SheetJS not loaded yet — try again','err'); return; }
   const wb = XLSX.utils.book_new();
-  const headers = ['Party Name','Bill Number','Bill Date','Due Amount','Paid Amount','Due Days Limit','Remarks'];
-  const sample = [
-    ['Sharma Traders','INV-2025-001','2025-01-15',25000,0,30,'First order'],
-    ['Royal Enterprises','INV-2025-002','2025-02-01',50000,20000,45,''],
-    ['Krishna Stores','','2025-03-10',15000,0,30,''],
+  // Sheet 1: Bills + initial payment
+  const h1 = ['Party Name','Bill Number','Bill Date','Due Amount','Paid Amount','Payment Date','Payment Mode','Due Days Limit','Remarks'];
+  const s1 = [
+    ['Sharma Traders',    'INV-2025-001','2025-01-15',25000,0,     '',           'Cash',     30,'First order'],
+    ['Royal Enterprises', 'INV-2025-002','2025-02-01',50000,20000, '2025-02-10', 'NEFT/RTGS',45,'Partial advance'],
+    ['Krishna Stores',    '',            '2025-03-10',15000,0,     '',           '',         30,''],
   ];
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...sample]);
-  // Column widths
-  ws['!cols'] = [
-    {wch:22},{wch:18},{wch:14},{wch:16},{wch:16},{wch:16},{wch:24}
+  const ws1 = XLSX.utils.aoa_to_sheet([h1,...s1]);
+  ws1['!cols']=[{wch:22},{wch:18},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:28}];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Bills Import');
+
+  // Sheet 2: Multiple payments per bill
+  const h2 = ['Bill Number','Payment Date','Paid Amount','Payment Mode','Remarks'];
+  const s2 = [
+    ['INV-2025-002','2025-03-01',15000,'UPI',   'Second instalment'],
+    ['INV-2025-002','2025-04-05',15000,'Cash',  'Third instalment'],
+    ['INV-2025-001','2025-02-20',25000,'Cheque','Full payment'],
   ];
-  XLSX.utils.book_append_sheet(wb, ws, 'DueLedger Import');
+  const ws2 = XLSX.utils.aoa_to_sheet([h2,...s2]);
+  ws2['!cols']=[{wch:18},{wch:14},{wch:14},{wch:14},{wch:28}];
+  const note=[['ℹ️ Use this sheet to add multiple payments to bills already in DueLedger or imported from the Bills sheet.']];
+  XLSX.utils.sheet_add_aoa(ws2, note, {origin:'A'+(s2.length+3)});
+  XLSX.utils.book_append_sheet(wb, ws2, 'Payments Import');
+
   XLSX.writeFile(wb, 'DueLedger_Bulk_Import_Template.xlsx');
   toast('Template downloaded!','ok');
 }
+
+/* ── helpers ── */
+function parseDate(raw_d) {
+  if (!raw_d) return '';
+  if (raw_d instanceof Date) return raw_d.toISOString().split('T')[0];
+  const s = String(raw_d).trim();
+  const m1 = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})$/);
+  const m2 = s.match(/^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})$/);
+  if (m1) return m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
+  if (m2) return s.replace(/\//g,'-');
+  return s;
+}
+function colIdx(headers, keys) {
+  return headers.findIndex(h => keys.some(k => h.includes(k)));
+}
+
+let _bulkPayRows = []; // for payments sheet
 
 function handleBulkFile(file) {
   if (!file) return;
   if (!file.name.match(/\.xlsx?$/i)) { toast('Please upload an .xlsx file','err'); return; }
   if (!window.XLSX) { toast('SheetJS not loaded — refresh and try again','err'); return; }
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function(ev) {
     try {
-      const wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-      if (raw.length < 2) { toast('No data rows found in file','err'); return; }
-      // Find header row (first row with "party" text)
-      let headerIdx = 0;
-      for (let i=0;i<Math.min(5,raw.length);i++) {
-        if (raw[i].some(c => String(c).toLowerCase().includes('party'))) { headerIdx=i; break; }
-      }
-      const headers = raw[headerIdx].map(h => String(h).toLowerCase().trim());
-      const col = name => {
-        const keys = {
-          party:    ['party name','party','name','customer'],
-          bill:     ['bill number','bill no','bill','invoice','inv'],
-          date:     ['bill date','date','invoice date'],
-          amount:   ['due amount','amount','total','invoice amount','billed'],
-          paid:     ['paid amount','paid','payment','amount paid'],
-          dueDays:  ['due days limit','due days','days','credit days','limit'],
-          remarks:  ['remarks','note','notes','comment','description']
-        };
-        for (const [k,v] of Object.entries(keys)) { if (k===name && v.some(kw => headers.some(h=>h.includes(kw)))) return headers.findIndex(h=>v.some(kw=>h.includes(kw))); }
-        return -1;
-      };
-      const ci = { party:col('party'), bill:col('bill'), date:col('date'), amount:col('amount'), paid:col('paid'), dueDays:col('dueDays'), remarks:col('remarks') };
+      const wb = XLSX.read(ev.target.result, {type:'array', cellDates:true});
 
+      // ── Parse Bills sheet ──
       _bulkRows = [];
-      for (let i=headerIdx+1;i<raw.length;i++) {
-        const r = raw[i];
-        if (r.every(c=>c==='')) continue; // skip blank rows
-        const party  = ci.party>=0  ? String(r[ci.party]||'').trim()  : '';
-        const bill   = ci.bill>=0   ? String(r[ci.bill]||'').trim()   : '';
-        const amount = ci.amount>=0 ? parseFloat(r[ci.amount]||0)||0  : 0;
-        const paid   = ci.paid>=0   ? parseFloat(r[ci.paid]||0)||0    : 0;
-        const dueDays= ci.dueDays>=0? parseInt(r[ci.dueDays]||30)||30 : 30;
-        const remarks= ci.remarks>=0? String(r[ci.remarks]||'').trim(): '';
+      const sheetNames = wb.SheetNames.map(s=>s.toLowerCase());
+      const billSheetIdx = sheetNames.findIndex(s=>s.includes('bill')||s.includes('import')||s.includes('due'));
+      const ws1 = wb.Sheets[wb.SheetNames[billSheetIdx>=0?billSheetIdx:0]];
+      const raw1 = XLSX.utils.sheet_to_json(ws1, {header:1, defval:''});
 
-        // Parse date
-        let date = '';
-        if (ci.date>=0 && r[ci.date]) {
-          const raw_d = r[ci.date];
-          if (raw_d instanceof Date) {
-            date = raw_d.toISOString().split('T')[0];
-          } else {
-            const s = String(raw_d).trim();
-            // Try DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD
-            const m1 = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})$/);
-            const m2 = s.match(/^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})$/);
-            if (m1) date = m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
-            else if (m2) date = s.replace(/\//g,'-');
-            else date = s;
-          }
+      if (raw1.length >= 2) {
+        let hIdx=0;
+        for (let i=0;i<Math.min(5,raw1.length);i++) {
+          if (raw1[i].some(c=>String(c).toLowerCase().includes('party'))) { hIdx=i; break; }
         }
-
-        // Validate
-        let err = [];
-        if (!party)   err.push('Party required');
-        if (!date)    err.push('Date required');
-        if (amount<=0) err.push('Amount must be > 0');
-        const isDup = bill && entries.some(e=>e.bill===bill);
-        const finalBill = bill || ('AUTO-'+Date.now()+'-'+i);
-
-        _bulkRows.push({ rowNum:i, party, bill, finalBill, date, amount, paid, dueDays, remarks, err, isDup });
+        const hdr = raw1[hIdx].map(h=>String(h).toLowerCase().trim());
+        const ci = {
+          party:   colIdx(hdr,['party name','party','name','customer']),
+          bill:    colIdx(hdr,['bill number','bill no','bill','invoice','inv']),
+          date:    colIdx(hdr,['bill date','date','invoice date']),
+          amount:  colIdx(hdr,['due amount','amount','total','invoice amount','billed']),
+          paid:    colIdx(hdr,['paid amount','paid','payment','amount paid']),
+          payDate: colIdx(hdr,['payment date','pay date','paid date']),
+          payMode: colIdx(hdr,['payment mode','mode','pay mode']),
+          dueDays: colIdx(hdr,['due days limit','due days','days','credit days','limit']),
+          remarks: colIdx(hdr,['remarks','note','notes','comment','description'])
+        };
+        for (let i=hIdx+1;i<raw1.length;i++) {
+          const r=raw1[i];
+          if (r.every(c=>c==='')) continue;
+          const party   = ci.party>=0   ? String(r[ci.party]||'').trim() : '';
+          const bill    = ci.bill>=0    ? String(r[ci.bill]||'').trim()  : '';
+          const amount  = ci.amount>=0  ? parseFloat(r[ci.amount]||0)||0 : 0;
+          const paid    = ci.paid>=0    ? parseFloat(r[ci.paid]||0)||0   : 0;
+          const dueDays = ci.dueDays>=0 ? parseInt(r[ci.dueDays]||30)||30: 30;
+          const remarks = ci.remarks>=0 ? String(r[ci.remarks]||'').trim(): '';
+          const date    = ci.date>=0    ? parseDate(r[ci.date])           : '';
+          const payDate = ci.payDate>=0 ? parseDate(r[ci.payDate])        : '';
+          const payMode = ci.payMode>=0 ? String(r[ci.payMode]||'Cash').trim()||'Cash' : 'Cash';
+          const initPay = (paid>0) ? [{date:payDate||date,amount:paid,mode:payMode}] : [];
+          let err=[];
+          if (!party)    err.push('Party required');
+          if (!date)     err.push('Date required');
+          if (amount<=0) err.push('Amount > 0 required');
+          const isDup = bill && entries.some(e=>e.bill===bill);
+          const finalBill = bill||('AUTO-'+Date.now()+'-'+i);
+          _bulkRows.push({rowNum:i,party,bill,finalBill,date,amount,paid,payDate,payMode,dueDays,remarks,initPay,err,isDup});
+        }
       }
+
+      // ── Parse Payments sheet ──
+      _bulkPayRows = [];
+      const paySheetIdx = wb.SheetNames.findIndex(s=>s.toLowerCase().includes('payment'));
+      if (paySheetIdx>=0) {
+        const ws2 = wb.Sheets[wb.SheetNames[paySheetIdx]];
+        const raw2 = XLSX.utils.sheet_to_json(ws2, {header:1, defval:''});
+        let hIdx=0;
+        for (let i=0;i<Math.min(5,raw2.length);i++) {
+          if (raw2[i].some(c=>['party','bill','payment'].some(k=>String(c).toLowerCase().includes(k)))) { hIdx=i; break; }
+        }
+        const hdr = raw2[hIdx].map(h=>String(h).toLowerCase().trim());
+        const ci = {
+          party:   colIdx(hdr,['party name','party','customer','name']),
+          billDate:colIdx(hdr,['bill date','invoice date','billing date']),
+          bill:    colIdx(hdr,['bill number','bill no','invoice no','invoice']),
+          payDate: colIdx(hdr,['payment date','paid date','pay date']),
+          amount:  colIdx(hdr,['paid amount','amount','payment amount']),
+          mode:    colIdx(hdr,['payment mode','mode','pay mode']),
+          remarks: colIdx(hdr,['remarks','note','notes'])
+        };
+        for (let i=hIdx+1;i<raw2.length;i++) {
+          const r=raw2[i];
+          if (r.every(c=>c==='')) continue;
+          const party    = ci.party>=0    ? String(r[ci.party]||'').trim()    : '';
+          const billDate = ci.billDate>=0 ? parseDate(r[ci.billDate])          : '';
+          const bill     = ci.bill>=0     ? String(r[ci.bill]||'').trim()      : '';
+          const payDate  = ci.payDate>=0  ? parseDate(r[ci.payDate])           : '';
+          const amount   = ci.amount>=0   ? parseFloat(r[ci.amount]||0)||0    : 0;
+          const mode     = ci.mode>=0     ? String(r[ci.mode]||'Cash').trim()||'Cash' : 'Cash';
+          const remarks  = ci.remarks>=0  ? String(r[ci.remarks]||'').trim()  : '';
+          let err=[];
+          if (!party)    err.push('Party required');
+          if (!billDate) err.push('Bill Date required');
+          if (!payDate)  err.push('Payment Date required');
+          if (amount<=0) err.push('Amount > 0 required');
+          // Match: party+billDate primary, bill number fallback
+          const inEntries = entries.some(e=>e.party===party&&e.date===billDate) ||
+                            (bill && entries.some(e=>e.bill===bill));
+          const inImport  = _bulkRows.some(b=>b.party===party&&b.date===billDate) ||
+                            (bill && _bulkRows.some(b=>b.finalBill===bill||b.bill===bill));
+          if (!inEntries && !inImport && !err.length) err.push('No matching bill for '+party+' / '+billDate);
+          _bulkPayRows.push({rowNum:i,party,billDate,bill,payDate,amount,mode,remarks,err,inEntries,inImport});
+        }
+      }
+
       renderBulkPreview();
     } catch(ex) {
+      console.error(ex);
       toast('Error reading file: '+ex.message,'err');
     }
   };
   reader.readAsArrayBuffer(file);
-  // Reset input so same file can be re-uploaded
   document.getElementById('bulkFileIn').value='';
 }
 
 function renderBulkPreview() {
   const wrap = document.getElementById('bulkPreviewWrap');
-  const tbody = document.getElementById('bulkBody');
-  if (!_bulkRows.length) { wrap.style.display='none'; return; }
+  if (!_bulkRows.length && !_bulkPayRows.length) { wrap.style.display='none'; return; }
   wrap.style.display='block';
   document.getElementById('bulkResultCard').style.display='none';
 
-  const ok   = _bulkRows.filter(r=>!r.err.length&&!r.isDup).length;
-  const dup  = _bulkRows.filter(r=>r.isDup).length;
-  const err  = _bulkRows.filter(r=>r.err.length&&!r.isDup).length;
-  document.getElementById('bulkStats').textContent =
-    ok+' ready · '+(dup?dup+' duplicate · ':'')+( err?err+' error':'');
-  document.getElementById('bulkImportBtn').disabled = ok===0;
+  const okB=_bulkRows.filter(r=>!r.err.length&&!r.isDup).length;
+  const dupB=_bulkRows.filter(r=>r.isDup).length;
+  const errB=_bulkRows.filter(r=>r.err.length&&!r.isDup).length;
+  const okP=_bulkPayRows.filter(r=>!r.err.length).length;
+  const errP=_bulkPayRows.filter(r=>r.err.length).length;
+  let st=okB+' bill'+(okB!==1?'s':'')+' ready';
+  if(dupB) st+=' · '+dupB+' duplicate';
+  if(errB) st+=' · '+errB+' bill error'+(errB>1?'s':'');
+  if(_bulkPayRows.length) st+=' · '+okP+' payment'+(okP!==1?'s':'')+' ready'+(errP?' · '+errP+' pay error'+(errP>1?'s':''):'');
+  document.getElementById('bulkStats').textContent=st;
+  document.getElementById('bulkImportBtn').disabled=(okB===0&&okP===0);
 
-  tbody.innerHTML = _bulkRows.map((r,i) => {
-    const cls = r.err.length?'bulk-row-err':(r.isDup?'bulk-row-dup':'bulk-row-ok');
-    const badge = r.err.length
-      ? '<span class="bulk-badge bulk-err">⚠️ '+r.err[0]+'</span>'
-      : (r.isDup
-        ? '<span class="bulk-badge bulk-dup">DUPLICATE</span>'
-        : '<span class="bulk-badge bulk-ok">✅ READY</span>');
-    return '<tr class="'+cls+'">'+
-      '<td style="color:var(--gray-500);font-size:.73rem">'+(i+1)+'</td>'+
-      '<td style="font-weight:700">'+(r.party||'<em style="color:var(--red)">missing</em>')+'</td>'+
-      '<td style="font-family:var(--mono);font-size:.78rem;color:var(--blue-600)">'+(r.finalBill)+'</td>'+
-      '<td style="font-family:var(--mono);font-size:.78rem">'+(r.date||'<em style="color:var(--red)">missing</em>')+'</td>'+
-      '<td style="font-family:var(--mono);font-weight:700;color:var(--red)">'+fmt(r.amount)+'</td>'+
-      '<td style="font-family:var(--mono);color:var(--green)">'+fmt(r.paid)+'</td>'+
-      '<td style="font-family:var(--mono)">'+(r.dueDays)+'d</td>'+
-      '<td style="font-size:.75rem;color:var(--gray-500)">'+(r.remarks||'—')+'</td>'+
-      '<td>'+badge+'</td>'+
-    '</tr>';
+  // Bills table
+  document.getElementById('bulkBody').innerHTML=_bulkRows.map((r,i)=>{
+    const cls=r.err.length?'bulk-row-err':(r.isDup?'bulk-row-dup':'bulk-row-ok');
+    const badge=r.err.length?'<span class="bulk-badge bulk-err">⚠️ '+r.err[0]+'</span>'
+      :(r.isDup?'<span class="bulk-badge bulk-dup">DUPLICATE</span>':'<span class="bulk-badge bulk-ok">✅ READY</span>');
+    const payCell=r.paid>0
+      ?'<div style="font-family:var(--mono);font-size:.78rem;color:var(--green)">'+fmt(r.paid)+'</div>'
+       +'<div style="font-size:.68rem;color:var(--gray-500)">'+(r.payDate||r.date)+' · '+r.payMode+'</div>'
+      :'<span style="color:var(--gray-400)">—</span>';
+    return '<tr class="'+cls+'"><td style="color:var(--gray-500);font-size:.73rem">'+(i+1)+'</td>'
+      +'<td style="font-weight:700">'+(r.party||'<em style="color:var(--red)">missing</em>')+'</td>'
+      +'<td class="b-no">'+(r.finalBill)+'</td>'
+      +'<td style="font-family:var(--mono);font-size:.78rem">'+(r.date||'<em style="color:var(--red)">missing</em>')+'</td>'
+      +'<td class="mono c-red">'+fmt(r.amount)+'</td>'
+      +'<td>'+payCell+'</td>'
+      +'<td style="font-family:var(--mono)">'+(r.dueDays)+'d</td>'
+      +'<td style="font-size:.75rem;color:var(--gray-500)">'+(r.remarks||'—')+'</td>'
+      +'<td>'+badge+'</td></tr>';
+  }).join('');
+
+  // Payments sub-table
+  const payWrap=document.getElementById('bulkPayTableWrap');
+  if(!payWrap) return;
+  if(!_bulkPayRows.length){payWrap.style.display='none';return;}
+  payWrap.style.display='block';
+  document.getElementById('bulkPayBody').innerHTML=_bulkPayRows.map((r,i)=>{
+    const cls=r.err.length?'bulk-row-err':'bulk-row-ok';
+    const badge=r.err.length?'<span class="bulk-badge bulk-err">⚠️ '+r.err[0]+'</span>':'<span class="bulk-badge bulk-ok">✅ READY</span>';
+    const where=r.inEntries?'<span class="bulk-badge bulk-ok">Existing Bill</span>'
+      :r.inImport?'<span class="bulk-badge" style="background:var(--blue-100);color:var(--blue-700);border:1px solid var(--blue-200)">From Import</span>':'';
+    return '<tr class="'+cls+'"><td style="color:var(--gray-500);font-size:.73rem">'+(i+1)+'</td>'
+      +'<td style="font-weight:700">'+(r.party||'<em style="color:var(--red)">missing</em>')+'</td>'
+      +'<td style="font-family:var(--mono);font-size:.78rem">'+(r.billDate||'<em style="color:var(--red)">missing</em>')+'</td>'
+      +'<td class="b-no">'+(r.bill||'<span style="color:var(--gray-400)">—</span>')+'</td>'
+      +'<td style="font-family:var(--mono);font-size:.78rem">'+r.payDate+'</td>'
+      +'<td class="mono c-green">'+fmt(r.amount)+'</td>'
+      +'<td style="font-size:.8rem">'+r.mode+'</td>'
+      +'<td style="font-size:.75rem;color:var(--gray-500)">'+(r.remarks||'—')+'</td>'
+      +'<td>'+where+'</td>'
+      +'<td>'+badge+'</td></tr>';
   }).join('');
 }
 
 function confirmBulkImport() {
-  const valid = _bulkRows.filter(r=>!r.err.length&&!r.isDup);
-  if (!valid.length) { toast('No valid rows to import','err'); return; }
-  let added=0;
-  valid.forEach(r => {
-    const newEntry = { id:Date.now()+Math.random(), party:r.party, bill:r.finalBill, date:r.date, amount:r.amount, paid:r.paid, dueDays:r.dueDays, remarks:r.remarks, payments:[] };
+  const validBills=_bulkRows.filter(r=>!r.err.length&&!r.isDup);
+  const validPays=_bulkPayRows.filter(r=>!r.err.length);
+  if(!validBills.length&&!validPays.length){toast('No valid rows to import','err');return;}
+
+  // Build a map of bill→id for newly added bills (so payments can reference them)
+  const newBillMap={};
+  let addedB=0;
+  validBills.forEach(r=>{
+    const id=Date.now()+Math.random();
+    const newEntry={id,party:r.party,bill:r.finalBill,date:r.date,amount:r.amount,
+      paid:r.paid,dueDays:r.dueDays,remarks:r.remarks,payments:[...r.initPay]};
     entries.push(newEntry);
-    added++;
+    newBillMap[r.finalBill]=entries[entries.length-1];
+    if(r.bill) newBillMap[r.bill]=entries[entries.length-1];
+    newBillMap[r.party+'|'+r.date]=entries[entries.length-1];
+    addedB++;
   });
+
+  // Apply payments sheet rows
+  let addedP=0;
+  validPays.forEach(p=>{
+    // Match by party+billDate first, then by bill number fallback
+    let entry = entries.find(e=>e.party===p.party && e.date===p.billDate);
+    if(!entry && p.bill) entry = entries.find(e=>e.bill===p.bill);
+    if(!entry && p.bill) entry = newBillMap[p.bill];
+    if(!entry) entry = newBillMap[p.party+'|'+p.billDate];
+    if(!entry) return;
+    const b=+entry.amount-+entry.paid;
+    const actual=Math.min(p.amount,b);
+    if(actual<=0) return;
+    entry.paid=+entry.paid+actual;
+    if(!entry.payments) entry.payments=[];
+    entry.payments.push({date:p.date,amount:actual,mode:p.mode});
+    addedP++;
+  });
+
   refreshAll();
-  // Show result
-  const rc = document.getElementById('bulkResultCard');
-  rc.style.display='block';
-  rc.style.background='var(--green-bg)';
-  rc.style.border='1.5px solid var(--green-bd)';
-  rc.innerHTML='<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.4rem">✅</span><div><div style="font-weight:800;color:var(--green);font-size:.92rem">'+added+' entr'+(added===1?'y':'ies')+' imported successfully!</div><div style="font-size:.75rem;font-family:var(--mono);color:var(--gray-500);margin-top:2px">All records saved to DueLedger</div></div></div>';
-  _bulkRows = [];
-  setTimeout(()=>{ renderBulkPreview(); }, 2000);
-  toast(added+' entries imported!','ok');
+  const rc=document.getElementById('bulkResultCard');
+  rc.style.display='block'; rc.style.background='var(--green-bg)'; rc.style.border='1.5px solid var(--green-bd)';
+  let msg='';
+  if(addedB) msg+=addedB+' bill'+(addedB!==1?'s':'')+' imported';
+  if(addedP) msg+=(msg?' · ':'')+addedP+' payment'+(addedP!==1?'s':'')+' recorded';
+  rc.innerHTML='<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.4rem">✅</span>'
+    +'<div><div style="font-weight:800;color:var(--green);font-size:.92rem">'+msg+' successfully!</div>'
+    +'<div style="font-size:.75rem;font-family:var(--mono);color:var(--gray-500);margin-top:2px">All records saved to DueLedger</div></div></div>';
+  _bulkRows=[]; _bulkPayRows=[];
+  setTimeout(()=>{renderBulkPreview();},2500);
+  toast(msg,'ok');
 }
 
 function clearBulkPreview() {
-  _bulkRows=[];
+  _bulkRows=[]; _bulkPayRows=[];
   document.getElementById('bulkPreviewWrap').style.display='none';
   document.getElementById('bulkFileIn').value='';
 }
