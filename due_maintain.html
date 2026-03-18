@@ -2292,7 +2292,7 @@ function genReceipt() {
   const hEl=document.getElementById('riPayHist');
   if (hist.length) {
     hEl.innerHTML=`<div class="rcpt-pay-title">Payment History (${hist.length} transaction${hist.length>1?'s':''})</div>`+
-      hist.map((p,i)=>`<div class="rcpt-pay-item"><div><strong>#${i+1}</strong>&nbsp;<span class="rcpt-pay-mode">${p.mode||'Cash'}</span></div><div style="font-family:var(--mono);font-size:.78rem;color:var(--gray-500)">${p.date||''}</div><div class="mono c-green">${fmt(p.amount)}</div></div>`).join('');
+      hist.map((p,i)=>`<div class="rcpt-pay-item"><div><strong>#${i+1}</strong>&nbsp;<span class="rcpt-pay-mode">${p.mode||'Cash'}</span></div><div style="font-family:var(--mono);font-size:.78rem;color:var(--gray-500)">${p.date||'—'}</div><div class="mono c-green">${fmt(p.amount)}</div></div>`).join('');
   } else {
     hEl.innerHTML=+e.paid>0?`<div class="rcpt-pay-title">Payment</div><div class="rcpt-pay-item"><div>Payment recorded</div><div class="mono c-green">${fmt(e.paid)}</div></div>`:'';
   }
@@ -2395,8 +2395,8 @@ function renderCustLedger() {
   tbody.innerHTML = bills.map((e, i) => {
     const b = +e.amount - +e.paid;
     const lastPay = e.payments && e.payments.length ? e.payments[e.payments.length-1] : null;
-    const payDate = lastPay ? lastPay.date : (e.paid>0 ? '—' : '—');
-    const payMode = lastPay ? (lastPay.mode||'Cash') : (e.paid>0 ? 'Cash' : '—');
+    const payDate = lastPay ? (lastPay.date||'—') : '—';
+    const payMode = lastPay ? (lastPay.mode||'Cash') : '—';
     // For paid bills, measure overdue against payment date; for unpaid, against today
     const isPaid = b <= 0;
     const refDate = isPaid && lastPay && lastPay.date ? lastPay.date : null;
@@ -2437,9 +2437,9 @@ function renderCustLedger() {
   bills.forEach(e => {
     txns.push({ date: e.date, bill: e.bill, type: 'BILL', amount: +e.amount, mode: '—', remarks: e.remarks||'' });
     if (e.payments && e.payments.length) {
-      e.payments.forEach(p => txns.push({ date: p.date||e.date, bill: e.bill, type: 'PAYMENT', amount: +p.amount, mode: p.mode||'Cash', remarks: '' }));
+      e.payments.forEach(p => txns.push({ date: p.date||'—', bill: e.bill, type: 'PAYMENT', amount: +p.amount, mode: p.mode||'Cash', remarks: '' }));
     } else if (+e.paid > 0) {
-      txns.push({ date: e.date, bill: e.bill, type: 'PAYMENT', amount: +e.paid, mode: 'Cash', remarks: '' });
+      txns.push({ date: '—', bill: e.bill, type: 'PAYMENT', amount: +e.paid, mode: 'Cash', remarks: '' });
     }
   });
   txns.sort((a,b) => new Date(a.date) - new Date(b.date));
