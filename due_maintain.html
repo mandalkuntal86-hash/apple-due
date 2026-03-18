@@ -8,6 +8,7 @@
 <!-- Firebase SDK (compat - works reliably in plain HTML files) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
   // Firebase compat SDK is now available as window.firebase
   window._fbReady = true;
@@ -209,6 +210,21 @@ tr:hover td{background:var(--blue-50);}
 .b-warn{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd);}
 .b-danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);}
 
+/* ── BULK IMPORT ── */
+.bulk-drop{border:2px dashed var(--blue-300,#93c5fd);border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--blue-50);}
+.bulk-drop:hover,.bulk-drop.drag{border-color:var(--blue-600);background:var(--blue-100);}
+.bulk-drop-icon{font-size:2.4rem;margin-bottom:8px;}
+.bulk-drop-text{font-weight:700;color:var(--blue-700);font-size:.95rem;}
+.bulk-drop-sub{font-size:.75rem;color:var(--gray-500);margin-top:4px;font-family:var(--mono);}
+.bulk-preview{margin-top:16px;overflow-x:auto;}
+.bulk-preview table{font-size:.8rem;}
+.bulk-row-ok td{background:var(--green-bg);}
+.bulk-row-err td{background:var(--red-bg);}
+.bulk-row-dup td{background:var(--orange-bg);}
+.bulk-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:700;font-family:var(--mono);}
+.bulk-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd);}
+.bulk-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);}
+.bulk-dup{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd);}
 /* ── PAYMENT BILL DETAIL ── */
 .pay-bill-detail{display:none;margin-bottom:16px;}
 .pay-bill-detail.show{display:block;}
@@ -606,6 +622,53 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BULK IMPORT ── -->
+    <div class="box" style="margin-top:18px" id="bulkImportBox">
+      <div class="box-head" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px"><span>📥</span><div class="box-title">Bulk Import via Excel</div></div>
+        <button class="btn btn-outline btn-sm" onclick="downloadBulkTemplate()">⬇️ Download Template</button>
+      </div>
+      <div class="box-body">
+        <!-- Drop zone -->
+        <div class="bulk-drop" id="bulkDrop" onclick="document.getElementById('bulkFileIn').click()"
+          ondragover="event.preventDefault();this.classList.add('drag')"
+          ondragleave="this.classList.remove('drag')"
+          ondrop="event.preventDefault();this.classList.remove('drag');handleBulkFile(event.dataTransfer.files[0])">
+          <div class="bulk-drop-icon">📊</div>
+          <div class="bulk-drop-text">Click to browse or drag &amp; drop your Excel file here</div>
+          <div class="bulk-drop-sub">Supports .xlsx · Download the template above to get started</div>
+        </div>
+        <input type="file" id="bulkFileIn" accept=".xlsx,.xls" style="display:none" onchange="handleBulkFile(this.files[0])">
+
+        <!-- Preview table -->
+        <div id="bulkPreviewWrap" style="display:none;margin-top:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+            <div>
+              <span style="font-weight:700;font-size:.9rem;color:var(--blue-800)">Preview</span>
+              <span id="bulkStats" style="font-size:.76rem;font-family:var(--mono);color:var(--gray-500);margin-left:10px"></span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-blue" onclick="confirmBulkImport()" id="bulkImportBtn">✅ Import Valid Rows</button>
+              <button class="btn btn-outline btn-sm" onclick="clearBulkPreview()">✕ Clear</button>
+            </div>
+          </div>
+          <div class="bulk-preview">
+            <table id="bulkTable">
+              <thead>
+                <tr>
+                  <th>#</th><th>Party Name</th><th>Bill No</th><th>Bill Date</th>
+                  <th>Due Amount</th><th>Paid Amount</th><th>Due Days</th><th>Remarks</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="bulkBody"></tbody>
+            </table>
+          </div>
+          <!-- Import result card -->
+          <div id="bulkResultCard" style="display:none;margin-top:14px;border-radius:10px;padding:14px 16px"></div>
         </div>
       </div>
     </div>
@@ -2603,6 +2666,173 @@ function printMonthReport() {
   w.document.write('</body></html>');
   w.document.close(); w.focus();
   setTimeout(()=>{w.print();w.close();},700);
+}
+
+
+/* ══════════════════════════════════════════════
+   BULK IMPORT — EXCEL UPLOAD
+══════════════════════════════════════════════ */
+let _bulkRows = [];
+
+function downloadBulkTemplate() {
+  if (!window.XLSX) { toast('SheetJS not loaded yet — try again','err'); return; }
+  const wb = XLSX.utils.book_new();
+  const headers = ['Party Name','Bill Number','Bill Date','Due Amount','Paid Amount','Due Days Limit','Remarks'];
+  const sample = [
+    ['Sharma Traders','INV-2025-001','2025-01-15',25000,0,30,'First order'],
+    ['Royal Enterprises','INV-2025-002','2025-02-01',50000,20000,45,''],
+    ['Krishna Stores','','2025-03-10',15000,0,30,''],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...sample]);
+  // Column widths
+  ws['!cols'] = [
+    {wch:22},{wch:18},{wch:14},{wch:16},{wch:16},{wch:16},{wch:24}
+  ];
+  XLSX.utils.book_append_sheet(wb, ws, 'DueLedger Import');
+  XLSX.writeFile(wb, 'DueLedger_Bulk_Import_Template.xlsx');
+  toast('Template downloaded!','ok');
+}
+
+function handleBulkFile(file) {
+  if (!file) return;
+  if (!file.name.match(/\.xlsx?$/i)) { toast('Please upload an .xlsx file','err'); return; }
+  if (!window.XLSX) { toast('SheetJS not loaded — refresh and try again','err'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      if (raw.length < 2) { toast('No data rows found in file','err'); return; }
+      // Find header row (first row with "party" text)
+      let headerIdx = 0;
+      for (let i=0;i<Math.min(5,raw.length);i++) {
+        if (raw[i].some(c => String(c).toLowerCase().includes('party'))) { headerIdx=i; break; }
+      }
+      const headers = raw[headerIdx].map(h => String(h).toLowerCase().trim());
+      const col = name => {
+        const keys = {
+          party:    ['party name','party','name','customer'],
+          bill:     ['bill number','bill no','bill','invoice','inv'],
+          date:     ['bill date','date','invoice date'],
+          amount:   ['due amount','amount','total','invoice amount','billed'],
+          paid:     ['paid amount','paid','payment','amount paid'],
+          dueDays:  ['due days limit','due days','days','credit days','limit'],
+          remarks:  ['remarks','note','notes','comment','description']
+        };
+        for (const [k,v] of Object.entries(keys)) { if (k===name && v.some(kw => headers.some(h=>h.includes(kw)))) return headers.findIndex(h=>v.some(kw=>h.includes(kw))); }
+        return -1;
+      };
+      const ci = { party:col('party'), bill:col('bill'), date:col('date'), amount:col('amount'), paid:col('paid'), dueDays:col('dueDays'), remarks:col('remarks') };
+
+      _bulkRows = [];
+      for (let i=headerIdx+1;i<raw.length;i++) {
+        const r = raw[i];
+        if (r.every(c=>c==='')) continue; // skip blank rows
+        const party  = ci.party>=0  ? String(r[ci.party]||'').trim()  : '';
+        const bill   = ci.bill>=0   ? String(r[ci.bill]||'').trim()   : '';
+        const amount = ci.amount>=0 ? parseFloat(r[ci.amount]||0)||0  : 0;
+        const paid   = ci.paid>=0   ? parseFloat(r[ci.paid]||0)||0    : 0;
+        const dueDays= ci.dueDays>=0? parseInt(r[ci.dueDays]||30)||30 : 30;
+        const remarks= ci.remarks>=0? String(r[ci.remarks]||'').trim(): '';
+
+        // Parse date
+        let date = '';
+        if (ci.date>=0 && r[ci.date]) {
+          const raw_d = r[ci.date];
+          if (raw_d instanceof Date) {
+            date = raw_d.toISOString().split('T')[0];
+          } else {
+            const s = String(raw_d).trim();
+            // Try DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD
+            const m1 = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})$/);
+            const m2 = s.match(/^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})$/);
+            if (m1) date = m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
+            else if (m2) date = s.replace(/\//g,'-');
+            else date = s;
+          }
+        }
+
+        // Validate
+        let err = [];
+        if (!party)   err.push('Party required');
+        if (!date)    err.push('Date required');
+        if (amount<=0) err.push('Amount must be > 0');
+        const isDup = bill && entries.some(e=>e.bill===bill);
+        const finalBill = bill || ('AUTO-'+Date.now()+'-'+i);
+
+        _bulkRows.push({ rowNum:i, party, bill, finalBill, date, amount, paid, dueDays, remarks, err, isDup });
+      }
+      renderBulkPreview();
+    } catch(ex) {
+      toast('Error reading file: '+ex.message,'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  // Reset input so same file can be re-uploaded
+  document.getElementById('bulkFileIn').value='';
+}
+
+function renderBulkPreview() {
+  const wrap = document.getElementById('bulkPreviewWrap');
+  const tbody = document.getElementById('bulkBody');
+  if (!_bulkRows.length) { wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  document.getElementById('bulkResultCard').style.display='none';
+
+  const ok   = _bulkRows.filter(r=>!r.err.length&&!r.isDup).length;
+  const dup  = _bulkRows.filter(r=>r.isDup).length;
+  const err  = _bulkRows.filter(r=>r.err.length&&!r.isDup).length;
+  document.getElementById('bulkStats').textContent =
+    ok+' ready · '+(dup?dup+' duplicate · ':'')+( err?err+' error':'');
+  document.getElementById('bulkImportBtn').disabled = ok===0;
+
+  tbody.innerHTML = _bulkRows.map((r,i) => {
+    const cls = r.err.length?'bulk-row-err':(r.isDup?'bulk-row-dup':'bulk-row-ok');
+    const badge = r.err.length
+      ? '<span class="bulk-badge bulk-err">⚠️ '+r.err[0]+'</span>'
+      : (r.isDup
+        ? '<span class="bulk-badge bulk-dup">DUPLICATE</span>'
+        : '<span class="bulk-badge bulk-ok">✅ READY</span>');
+    return '<tr class="'+cls+'">'+
+      '<td style="color:var(--gray-500);font-size:.73rem">'+(i+1)+'</td>'+
+      '<td style="font-weight:700">'+(r.party||'<em style="color:var(--red)">missing</em>')+'</td>'+
+      '<td style="font-family:var(--mono);font-size:.78rem;color:var(--blue-600)">'+(r.finalBill)+'</td>'+
+      '<td style="font-family:var(--mono);font-size:.78rem">'+(r.date||'<em style="color:var(--red)">missing</em>')+'</td>'+
+      '<td style="font-family:var(--mono);font-weight:700;color:var(--red)">'+fmt(r.amount)+'</td>'+
+      '<td style="font-family:var(--mono);color:var(--green)">'+fmt(r.paid)+'</td>'+
+      '<td style="font-family:var(--mono)">'+(r.dueDays)+'d</td>'+
+      '<td style="font-size:.75rem;color:var(--gray-500)">'+(r.remarks||'—')+'</td>'+
+      '<td>'+badge+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function confirmBulkImport() {
+  const valid = _bulkRows.filter(r=>!r.err.length&&!r.isDup);
+  if (!valid.length) { toast('No valid rows to import','err'); return; }
+  let added=0;
+  valid.forEach(r => {
+    const newEntry = { id:Date.now()+Math.random(), party:r.party, bill:r.finalBill, date:r.date, amount:r.amount, paid:r.paid, dueDays:r.dueDays, remarks:r.remarks, payments:[] };
+    entries.push(newEntry);
+    added++;
+  });
+  refreshAll();
+  // Show result
+  const rc = document.getElementById('bulkResultCard');
+  rc.style.display='block';
+  rc.style.background='var(--green-bg)';
+  rc.style.border='1.5px solid var(--green-bd)';
+  rc.innerHTML='<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.4rem">✅</span><div><div style="font-weight:800;color:var(--green);font-size:.92rem">'+added+' entr'+(added===1?'y':'ies')+' imported successfully!</div><div style="font-size:.75rem;font-family:var(--mono);color:var(--gray-500);margin-top:2px">All records saved to DueLedger</div></div></div>';
+  _bulkRows = [];
+  setTimeout(()=>{ renderBulkPreview(); }, 2000);
+  toast(added+' entries imported!','ok');
+}
+
+function clearBulkPreview() {
+  _bulkRows=[];
+  document.getElementById('bulkPreviewWrap').style.display='none';
+  document.getElementById('bulkFileIn').value='';
 }
 
 /* ── INIT ── */
