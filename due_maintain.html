@@ -1720,7 +1720,10 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
     <!-- ── PARTY LEDGER ── -->
     <div class="sub-panel" id="cc-ledger">
       <div class="box" style="margin-bottom:18px">
-        <div class="box-head"><span>📒</span><div class="box-title">Party Ledger</div></div>
+        <div class="box-head" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px"><span>📒</span><div class="box-title">Party Ledger</div></div>
+          <button class="btn btn-outline btn-sm" onclick="printCCLedger()">🖨️ Print</button>
+        </div>
         <div class="box-body">
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
             <div class="f" style="flex:1;min-width:180px"><label>Select Party *</label><select id="ccLedgerParty" onchange="renderCCLedger()"><option value="">— Choose Party —</option></select></div>
@@ -1751,7 +1754,10 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
       <div class="box" style="margin-bottom:18px">
         <div class="box-head" style="justify-content:space-between">
           <div style="display:flex;align-items:center;gap:8px"><span>📋</span><div class="box-title">All Parties Summary</div></div>
-          <button class="btn btn-red btn-sm admin-only" onclick="clearCCData()">🗑️ Clear CC Data</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="printCCSummary()">🖨️ Print</button>
+            <button class="btn btn-red btn-sm admin-only" onclick="clearCCData()">🗑️ Clear CC Data</button>
+          </div>
         </div>
         <div class="box-body">
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
@@ -4487,6 +4493,127 @@ function refreshCCPartyLists() {
     if(dl) dl.innerHTML=parties.map(p=>`<option value="${p}">`).join('');
   });
 }
+
+/* ── CC PRINT FUNCTIONS ── */
+function printCCLedger() {
+  const party = document.getElementById('ccLedgerParty')?.value;
+  if (!party) { toast('Select a party first','err'); return; }
+  const from  = document.getElementById('ccLedgerFrom')?.value||'';
+  const to    = document.getElementById('ccLedgerTo')?.value||'';
+  const s     = ccPartyStats(party, from, to);
+  const now   = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  const range = (from||to) ? (from||'…')+' → '+(to||'…') : 'All Time';
+  const w = window.open('','_blank','width=900,height=900');
+  w.document.write(`<!DOCTYPE html><html><head><title>CC Ledger - ${party}</title>`);
+  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">');
+  w.document.write('<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Inter,sans-serif;padding:24px;background:#fff;color:#111;font-size:13px;}');
+  w.document.write('.hdr{background:linear-gradient(135deg,#1a3066,#1e4db7);color:#fff;padding:20px 24px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}');
+  w.document.write('.hdr-title{font-size:1.3rem;font-weight:800;} .hdr-sub{font-size:.7rem;opacity:.6;margin-top:3px;letter-spacing:1px;text-transform:uppercase;}');
+  w.document.write('.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}');
+  w.document.write('.card{border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;} .card-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:4px;} .card-val{font-size:1.2rem;font-weight:700;}');
+  w.document.write('table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:.82rem;}');
+  w.document.write('thead tr{background:#0c1e4a;} th{padding:9px 11px;text-align:left;color:rgba(255,255,255,.8);font-size:.65rem;text-transform:uppercase;letter-spacing:.8px;font-weight:500;}');
+  w.document.write('td{padding:9px 11px;border-top:1px solid #f1f5f9;} tfoot td{background:#f8faff;font-weight:700;border-top:2px solid #bfdbfe;}');
+  w.document.write('.sec-title{font-size:.85rem;font-weight:700;color:#1e4db7;padding:10px 14px;background:#eff6ff;border-radius:7px;margin-bottom:10px;}');
+  w.document.write('.footer{text-align:center;font-size:.65rem;color:#94a3b8;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;}');
+  w.document.write('@media print{body{padding:12px}}</style></head><body>');
+  // Header
+  w.document.write(`<div class="hdr"><div><div class="hdr-title">${party} — CC Party Ledger</div><div class="hdr-sub">Period: ${range}</div></div><div style="text-align:right"><div style="font-size:.85rem;font-weight:600">Apple Resale & Card Management</div><div style="font-size:.7rem;opacity:.6;margin-top:3px">${now}</div></div></div>`);
+  // Summary cards
+  const txnDue = s.totTxn - s.totTxnPaid;
+  const commDue = s.totComm - s.totCommPaid;
+  w.document.write(`<div class="cards">
+    <div class="card"><div class="card-label">Total Txn Amount</div><div class="card-val" style="color:#1e4db7">₹${s.totTxn.toLocaleString('en-IN',{minimumFractionDigits:2})}</div></div>
+    <div class="card"><div class="card-label">Payment Received</div><div class="card-val" style="color:#2563eb">₹${s.totTxnPaid.toLocaleString('en-IN',{minimumFractionDigits:2})}</div></div>
+    <div class="card"><div class="card-label">Due (Txn−Payment)</div><div class="card-val" style="color:${txnDue>0?'#dc2626':'#16a34a'}">₹${txnDue.toLocaleString('en-IN',{minimumFractionDigits:2})}</div></div>
+    <div class="card"><div class="card-label">Commission (${s.pct}%)</div><div class="card-val" style="color:#d97706">₹${s.totComm.toLocaleString('en-IN',{minimumFractionDigits:2})}</div></div>
+    <div class="card"><div class="card-label">Comm Paid</div><div class="card-val" style="color:#16a34a">₹${s.totCommPaid.toLocaleString('en-IN',{minimumFractionDigits:2})}</div></div>
+    <div class="card"><div class="card-label">Comm Due</div><div class="card-val" style="color:${commDue>0?'#dc2626':'#16a34a'}">₹${commDue.toLocaleString('en-IN',{minimumFractionDigits:2})}</div></div>
+  </div>`);
+  // Transactions table
+  const fmtI = n => '₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const txnsSorted = [...s.txns].sort((a,b)=>a.date.localeCompare(b.date));
+  let tT=0,tC=0;
+  w.document.write('<div class="sec-title">💳 Transactions</div>');
+  w.document.write('<table><thead><tr><th>#</th><th>Date</th><th>Card</th><th>Amount</th><th>Comm %</th><th>Commission</th><th>Remarks</th></tr></thead><tbody>');
+  txnsSorted.forEach((t,i)=>{
+    const pct=+t.rentPct||s.pct; const comm=t.amount*pct/100;
+    tT+=+t.amount; tC+=comm;
+    w.document.write(`<tr><td style="color:#94a3b8">${i+1}</td><td style="font-family:monospace">${t.date}</td><td style="font-family:monospace;color:#2563eb">${t.card?'****'+t.card:'—'}</td><td style="font-family:monospace;color:#dc2626">${fmtI(t.amount)}</td><td style="color:#d97706">${pct}%</td><td style="font-family:monospace;color:#d97706">${fmtI(comm)}</td><td style="color:#64748b">${t.remarks||'—'}</td></tr>`);
+  });
+  w.document.write(`</tbody><tfoot><tr><td colspan="3" style="text-align:right">TOTAL</td><td style="font-family:monospace;color:#dc2626">${fmtI(tT)}</td><td></td><td style="font-family:monospace;color:#d97706">${fmtI(tC)}</td><td></td></tr></tfoot></table>`);
+  // Txn Payments
+  const txnPaysSorted=[...s.txnPays].sort((a,b)=>a.date.localeCompare(b.date));
+  let tTP=0;
+  w.document.write('<div class="sec-title">💰 Transaction Payments</div>');
+  w.document.write('<table><thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Mode</th><th>Remarks</th></tr></thead><tbody>');
+  if(!txnPaysSorted.length) w.document.write('<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:16px">No payments recorded</td></tr>');
+  txnPaysSorted.forEach((p,i)=>{ tTP+=+p.amount; w.document.write(`<tr><td style="color:#94a3b8">${i+1}</td><td style="font-family:monospace">${p.date}</td><td style="font-family:monospace;color:#2563eb">${fmtI(p.amount)}</td><td>${p.mode}</td><td style="color:#64748b">${p.remarks||'—'}</td></tr>`); });
+  w.document.write(`</tbody><tfoot><tr><td colspan="2" style="text-align:right">TOTAL PAID</td><td style="font-family:monospace;color:#2563eb">${fmtI(tTP)}</td><td colspan="2"></td></tr></tfoot></table>`);
+  // Commission Payments
+  const commPaysSorted=[...s.commPays].sort((a,b)=>a.date.localeCompare(b.date));
+  let tCP=0;
+  w.document.write('<div class="sec-title">📊 Commission Payments</div>');
+  w.document.write('<table><thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Mode</th><th>Remarks</th></tr></thead><tbody>');
+  if(!commPaysSorted.length) w.document.write('<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:16px">No commission payments recorded</td></tr>');
+  commPaysSorted.forEach((p,i)=>{ tCP+=+p.amount; w.document.write(`<tr><td style="color:#94a3b8">${i+1}</td><td style="font-family:monospace">${p.date}</td><td style="font-family:monospace;color:#16a34a">${fmtI(p.amount)}</td><td>${p.mode}</td><td style="color:#64748b">${p.remarks||'—'}</td></tr>`); });
+  w.document.write(`</tbody><tfoot><tr><td colspan="2" style="text-align:right">TOTAL PAID</td><td style="font-family:monospace;color:#16a34a">${fmtI(tCP)}</td><td colspan="2"></td></tr></tfoot></table>`);
+  w.document.write(`<div class="footer">Apple Resale & Card Management · Developed by Kuntal Mandal · ${new Date().toLocaleString('en-IN')}</div>`);
+  w.document.write('</body></html>');
+  w.document.close(); w.focus();
+  setTimeout(()=>{w.print();},700);
+}
+
+function printCCSummary() {
+  const from = document.getElementById('ccSumFrom')?.value||'';
+  const to   = document.getElementById('ccSumTo')?.value||'';
+  const range = (from||to) ? (from||'…')+' → '+(to||'…') : 'All Time';
+  const now  = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  const fmtI = n => '₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const parties = ccParties();
+  let grandTxn=0,grandTxnPaid=0,grandComm=0,grandCommPaid=0;
+  const rows = parties.map(p=>{
+    const s=ccPartyStats(p,from,to);
+    if(!s.txns.length&&!s.txnPays.length&&!s.commPays.length) return null;
+    grandTxn+=s.totTxn; grandTxnPaid+=s.totTxnPaid; grandComm+=s.totComm; grandCommPaid+=s.totCommPaid;
+    return {p,s};
+  }).filter(Boolean);
+  const w = window.open('','_blank','width=1100,height=900');
+  w.document.write(`<!DOCTYPE html><html><head><title>CC Summary</title>`);
+  w.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">');
+  w.document.write('<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Inter,sans-serif;padding:24px;background:#fff;color:#111;font-size:13px;}');
+  w.document.write('.hdr{background:linear-gradient(135deg,#1a3066,#1e4db7);color:#fff;padding:20px 24px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}');
+  w.document.write('.hdr-title{font-size:1.3rem;font-weight:800;} .hdr-sub{font-size:.7rem;opacity:.6;margin-top:3px;letter-spacing:1px;text-transform:uppercase;}');
+  w.document.write('.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}');
+  w.document.write('.card{border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;} .card-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:3px;} .card-val{font-size:1rem;font-weight:700;}');
+  w.document.write('table{width:100%;border-collapse:collapse;font-size:.82rem;}');
+  w.document.write('thead tr{background:#0c1e4a;} th{padding:9px 11px;text-align:left;color:rgba(255,255,255,.8);font-size:.65rem;text-transform:uppercase;letter-spacing:.8px;font-weight:500;}');
+  w.document.write('td{padding:9px 11px;border-top:1px solid #f1f5f9;} tfoot td{background:#f8faff;font-weight:700;border-top:2px solid #bfdbfe;font-family:monospace;}');
+  w.document.write('.footer{text-align:center;font-size:.65rem;color:#94a3b8;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;}');
+  w.document.write('@media print{body{padding:12px}}</style></head><body>');
+  w.document.write(`<div class="hdr"><div><div class="hdr-title">Credit Card — All Parties Summary</div><div class="hdr-sub">Period: ${range}</div></div><div style="text-align:right"><div style="font-size:.85rem;font-weight:600">Apple Resale & Card Management</div><div style="font-size:.7rem;opacity:.6;margin-top:3px">${now}</div></div></div>`);
+  const gTxnDue=grandTxn-grandTxnPaid, gCommDue=grandComm-grandCommPaid;
+  w.document.write(`<div class="cards">
+    <div class="card"><div class="card-label">Total Txn</div><div class="card-val" style="color:#1e4db7">${fmtI(grandTxn)}</div></div>
+    <div class="card"><div class="card-label">Payment</div><div class="card-val" style="color:#2563eb">${fmtI(grandTxnPaid)}</div></div>
+    <div class="card"><div class="card-label">Due</div><div class="card-val" style="color:${gTxnDue>0?'#dc2626':'#16a34a'}">${fmtI(gTxnDue)}</div></div>
+    <div class="card"><div class="card-label">Commission</div><div class="card-val" style="color:#d97706">${fmtI(grandComm)}</div></div>
+    <div class="card"><div class="card-label">Comm Paid</div><div class="card-val" style="color:#16a34a">${fmtI(grandCommPaid)}</div></div>
+    <div class="card"><div class="card-label">Comm Due</div><div class="card-val" style="color:${gCommDue>0?'#dc2626':'#16a34a'}">${fmtI(gCommDue)}</div></div>
+  </div>`);
+  w.document.write('<table><thead><tr><th>Party</th><th>Txns</th><th>Txn Amount</th><th>Payment</th><th>Due</th><th>Comm%</th><th>Commission</th><th>Comm Paid</th><th>Comm Due</th><th>Status</th></tr></thead><tbody>');
+  rows.forEach(({p,s})=>{
+    const txnDue=s.totTxn-s.totTxnPaid, commDue=s.totComm-s.totCommPaid;
+    const status=commDue<=0?'SETTLED':'PENDING';
+    w.document.write(`<tr><td style="font-weight:700">${p}</td><td style="font-family:monospace">${s.txns.length}</td><td style="font-family:monospace;color:#dc2626">${fmtI(s.totTxn)}</td><td style="font-family:monospace;color:#2563eb">${fmtI(s.totTxnPaid)}</td><td style="font-family:monospace;color:${txnDue>0?'#dc2626':'#16a34a'}">${fmtI(txnDue)}</td><td style="color:#d97706">${s.pct}%</td><td style="font-family:monospace;color:#d97706">${fmtI(s.totComm)}</td><td style="font-family:monospace;color:#16a34a">${fmtI(s.totCommPaid)}</td><td style="font-family:monospace;color:${commDue>0?'#dc2626':'#16a34a'}">${fmtI(commDue)}</td><td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:600;background:${commDue<=0?'#f0fdf4':'#fef2f2'};color:${commDue<=0?'#16a34a':'#dc2626'};border:1px solid ${commDue<=0?'#bbf7d0':'#fecaca'}">${status}</span></td></tr>`);
+  });
+  w.document.write(`</tbody><tfoot><tr><td>TOTAL</td><td></td><td>${fmtI(grandTxn)}</td><td>${fmtI(grandTxnPaid)}</td><td>${fmtI(gTxnDue)}</td><td></td><td>${fmtI(grandComm)}</td><td>${fmtI(grandCommPaid)}</td><td>${fmtI(gCommDue)}</td><td></td></tr></tfoot></table>`);
+  w.document.write(`<div class="footer">Apple Resale & Card Management · Developed by Kuntal Mandal · ${new Date().toLocaleString('en-IN')}</div>`);
+  w.document.write('</body></html>');
+  w.document.close(); w.focus();
+  setTimeout(()=>{w.print();},700);
+}
+
 function clearCCData() {
   if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
   if(!confirm('Delete ALL credit card transactions, payments and commission rates? This cannot be undone!')) return;
