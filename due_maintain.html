@@ -1502,6 +1502,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
       <button class="sub-tab active" onclick="ccSub('cc-dash',this)">📊 Dashboard</button>
       <button class="sub-tab admin-only" onclick="ccSub('cc-txn',this)">➕ Add Transaction</button>
       <button class="sub-tab admin-only" onclick="ccSub('cc-pay',this)">💸 Record Payment</button>
+      <button class="sub-tab admin-only" onclick="ccSub('cc-bulk',this)">📥 Bulk Entry</button>
       <button class="sub-tab" onclick="ccSub('cc-commission',this)">📊 Commission</button>
       <button class="sub-tab" onclick="ccSub('cc-ledger',this)">📒 Party Ledger</button>
       <button class="sub-tab" onclick="ccSub('cc-summary',this)">📋 Summary</button>
@@ -1686,6 +1687,62 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
           <div class="f-actions" style="margin-top:14px">
             <button class="btn btn-blue admin-only" onclick="addCCCommPayment()">✅ Record Commission Payment</button>
           </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── BULK ENTRY (Admin Only) ── -->
+    <div class="sub-panel" id="cc-bulk">
+
+      <!-- Download Template -->
+      <div class="box" style="margin-bottom:18px">
+        <div class="box-head" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px"><span>📋</span><div class="box-title">CC Bulk Entry — Transactions &amp; Payments</div></div>
+          <button class="btn btn-outline btn-sm" onclick="downloadCCBulkTemplate()">⬇️ Download Template</button>
+        </div>
+        <div class="box-body">
+          <p style="font-size:.78rem;color:var(--gray-500);font-family:var(--mono);margin-bottom:14px">
+            Upload an Excel (.xlsx) file with two sheets:<br>
+            <strong style="color:var(--blue-700)">Sheet 1 — CC Transactions:</strong> Party Name, Card Last 4, Txn Date, Amount, Commission %, Remarks<br>
+            <strong style="color:var(--blue-700)">Sheet 2 — CC Payments:</strong> Party Name, Payment Date, Amount, Payment Mode, Type (txn/comm), Remarks
+          </p>
+
+          <!-- Drop zone -->
+          <div class="bulk-drop" id="ccBulkDrop"
+               onclick="document.getElementById('ccBulkFileIn').click()"
+               ondragover="event.preventDefault();this.classList.add('drag')"
+               ondragleave="this.classList.remove('drag')"
+               ondrop="event.preventDefault();this.classList.remove('drag');handleCCBulkFile(event.dataTransfer.files[0])">
+            <div class="bulk-drop-icon">📂</div>
+            <div class="bulk-drop-text">Click or drag &amp; drop Excel file here</div>
+            <div class="bulk-drop-sub">.xlsx format • Sheet 1: Transactions · Sheet 2: Payments</div>
+          </div>
+          <input type="file" id="ccBulkFileIn" accept=".xlsx,.xls" style="display:none" onchange="handleCCBulkFile(this.files[0])">
+
+          <!-- Preview area -->
+          <div id="ccBulkPreviewWrap" style="display:none;margin-top:20px">
+
+            <!-- Transactions preview -->
+            <div style="margin-bottom:18px">
+              <div class="sec-head" style="margin-bottom:10px">💳 Transactions Preview <span id="ccBulkTxnCount" style="font-size:.75rem;color:var(--gray-500);font-weight:400"></span></div>
+              <div class="bulk-preview" id="ccBulkTxnPreview"></div>
+            </div>
+
+            <!-- Payments preview -->
+            <div style="margin-bottom:18px">
+              <div class="sec-head" style="margin-bottom:10px">💵 Payments Preview <span id="ccBulkPayCount" style="font-size:.75rem;color:var(--gray-500);font-weight:400"></span></div>
+              <div class="bulk-preview" id="ccBulkPayPreview"></div>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+              <button class="btn btn-blue admin-only" onclick="importCCBulk()">✅ Import All</button>
+              <button class="btn btn-outline" onclick="clearCCBulkPreview()">✕ Clear</button>
+            </div>
+          </div>
+
+          <!-- Result card -->
+          <div id="ccBulkResultCard" style="display:none;margin-top:16px;border-radius:10px;padding:14px 16px"></div>
         </div>
       </div>
 
@@ -4632,6 +4689,249 @@ function clearCCData() {
     toast('CC data cleared','err');
   }
   renderCCDash(); renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
+}
+
+/* ══════════════════════════════════════════════
+   CC BULK ENTRY — ADMIN ONLY
+══════════════════════════════════════════════ */
+let _ccBulkTxnRows = [];
+let _ccBulkPayRows = [];
+
+function downloadCCBulkTemplate() {
+  if (!window.XLSX) { toast('SheetJS not loaded yet — try again','err'); return; }
+  const wb = XLSX.utils.book_new();
+  // Sheet 1: CC Transactions
+  const h1 = ['Party Name','Card Last 4','Txn Date','Amount (₹)','Commission %','Remarks'];
+  const s1 = [
+    ['Sharma Traders','4521','2025-01-15',50000,1.5,'January batch'],
+    ['Royal Enterprises','9834','2025-02-01',120000,2,'February swipe'],
+    ['Krishna Stores','','2025-03-10',30000,1,''],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet([h1,...s1]);
+  ws1['!cols']=[{wch:22},{wch:14},{wch:14},{wch:14},{wch:14},{wch:28}];
+  XLSX.utils.book_append_sheet(wb, ws1, 'CC Transactions');
+
+  // Sheet 2: CC Payments
+  const h2 = ['Party Name','Payment Date','Amount (₹)','Payment Mode','Type (txn/comm)','Remarks'];
+  const s2 = [
+    ['Sharma Traders','2025-01-20',50000,'NEFT/RTGS','txn','Full txn settlement'],
+    ['Sharma Traders','2025-01-22',750,'Cash','comm','Commission paid'],
+    ['Royal Enterprises','2025-02-10',60000,'UPI','txn','Part payment'],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet([h2,...s2]);
+  ws2['!cols']=[{wch:22},{wch:14},{wch:14},{wch:14},{wch:16},{wch:28}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'CC Payments');
+
+  XLSX.writeFile(wb, 'CC_Bulk_Entry_Template.xlsx');
+  toast('Template downloaded!','ok');
+}
+
+function handleCCBulkFile(file) {
+  if (!_isAdmin) { toast('🔐 Admin login required','err'); openLoginFromApp(); return; }
+  if (!file) return;
+  if (!file.name.match(/\.xlsx?$/i)) { toast('Please upload an .xlsx file','err'); return; }
+  if (!window.XLSX) { toast('SheetJS not loaded — refresh and try again','err'); return; }
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const wb = XLSX.read(ev.target.result, {type:'array', cellDates:true});
+
+      // ── Sheet 1: CC Transactions ──
+      _ccBulkTxnRows = [];
+      if (wb.SheetNames[0]) {
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        if (rows.length > 1) {
+          const hdrs = rows[0].map(h=>String(h||'').toLowerCase().trim());
+          const iParty = hdrs.findIndex(h=>h.includes('party'));
+          const iCard  = hdrs.findIndex(h=>h.includes('card'));
+          const iDate  = hdrs.findIndex(h=>h.includes('date'));
+          const iAmt   = hdrs.findIndex(h=>h.includes('amount'));
+          const iComm  = hdrs.findIndex(h=>h.includes('comm'));
+          const iRem   = hdrs.findIndex(h=>h.includes('remark')||h.includes('note'));
+          for (let r=1; r<rows.length; r++) {
+            const row = rows[r];
+            const party = iParty>=0 ? String(row[iParty]||'').trim() : '';
+            const card  = iCard>=0  ? String(row[iCard]||'').trim()  : '';
+            const dateR = iDate>=0  ? row[iDate] : '';
+            const date  = parseDate(dateR);
+            const amt   = iAmt>=0   ? parseFloat(row[iAmt]||0)       : 0;
+            const comm  = iComm>=0  ? parseFloat(row[iComm]||0)      : 0;
+            const rem   = iRem>=0   ? String(row[iRem]||'').trim()   : '';
+            if (!party || !date || !amt) {
+              if (row.some(c=>String(c||'').trim())) _ccBulkTxnRows.push({party,card,date,amt,comm,rem,err:'Missing party, date or amount'});
+              continue;
+            }
+            const dup = ccTxns.some(t=>t.party===party && t.date===date && +t.amount===amt);
+            _ccBulkTxnRows.push({party,card,date,amt,comm,rem,dup,err:''});
+          }
+        }
+      }
+
+      // ── Sheet 2: CC Payments ──
+      _ccBulkPayRows = [];
+      if (wb.SheetNames[1]) {
+        const ws = wb.Sheets[wb.SheetNames[1]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        if (rows.length > 1) {
+          const hdrs = rows[0].map(h=>String(h||'').toLowerCase().trim());
+          const iParty = hdrs.findIndex(h=>h.includes('party'));
+          const iDate  = hdrs.findIndex(h=>h.includes('date'));
+          const iAmt   = hdrs.findIndex(h=>h.includes('amount'));
+          const iMode  = hdrs.findIndex(h=>h.includes('mode'));
+          const iType  = hdrs.findIndex(h=>h.includes('type'));
+          const iRem   = hdrs.findIndex(h=>h.includes('remark')||h.includes('note'));
+          for (let r=1; r<rows.length; r++) {
+            const row = rows[r];
+            const party = iParty>=0 ? String(row[iParty]||'').trim() : '';
+            const dateR = iDate>=0  ? row[iDate] : '';
+            const date  = parseDate(dateR);
+            const amt   = iAmt>=0   ? parseFloat(row[iAmt]||0)      : 0;
+            const mode  = iMode>=0  ? String(row[iMode]||'Cash').trim() : 'Cash';
+            const type  = iType>=0  ? String(row[iType]||'txn').trim().toLowerCase() : 'txn';
+            const rem   = iRem>=0   ? String(row[iRem]||'').trim()  : '';
+            const ptype = type.includes('comm') ? 'comm' : 'txn';
+            if (!party || !date || !amt) {
+              if (row.some(c=>String(c||'').trim())) _ccBulkPayRows.push({party,date,amt,mode,ptype,rem,err:'Missing party, date or amount'});
+              continue;
+            }
+            _ccBulkPayRows.push({party,date,amt,mode,ptype,rem,err:''});
+          }
+        }
+      }
+
+      renderCCBulkPreview();
+      document.getElementById('ccBulkPreviewWrap').style.display = 'block';
+      document.getElementById('ccBulkResultCard').style.display = 'none';
+    } catch(e) {
+      toast('Error reading file: '+e.message, 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderCCBulkPreview() {
+  // Transactions
+  const txnWrap = document.getElementById('ccBulkTxnPreview');
+  const txnCount = document.getElementById('ccBulkTxnCount');
+  if (_ccBulkTxnRows.length === 0) {
+    txnWrap.innerHTML = '<p style="color:var(--gray-500);font-size:.8rem;font-style:italic">No transaction rows found in Sheet 1.</p>';
+    txnCount.textContent = '';
+  } else {
+    const ok=_ccBulkTxnRows.filter(r=>!r.err&&!r.dup).length;
+    const dup=_ccBulkTxnRows.filter(r=>r.dup).length;
+    const err=_ccBulkTxnRows.filter(r=>r.err).length;
+    txnCount.textContent = `— ${_ccBulkTxnRows.length} rows · ✅ ${ok} new · ⚠️ ${dup} duplicate · ❌ ${err} error`;
+    txnWrap.innerHTML = `<table>
+      <thead><tr><th>#</th><th>Party</th><th>Card</th><th>Date</th><th>Amount</th><th>Comm%</th><th>Remarks</th><th>Status</th></tr></thead>
+      <tbody>${_ccBulkTxnRows.map((r,i)=>{
+        const cls = r.err ? 'bulk-row-err' : r.dup ? 'bulk-row-dup' : 'bulk-row-ok';
+        const badge = r.err ? `<span class="bulk-badge bulk-err">ERROR</span>` : r.dup ? `<span class="bulk-badge bulk-dup">DUPLICATE</span>` : `<span class="bulk-badge bulk-ok">NEW</span>`;
+        const note = r.err ? `<br><span style="font-size:.68rem;color:var(--red)">${r.err}</span>` : '';
+        return `<tr class="${cls}">
+          <td style="color:var(--gray-500)">${i+1}</td>
+          <td style="font-weight:600">${r.party||'—'}${note}</td>
+          <td style="font-family:var(--mono)">${r.card||'—'}</td>
+          <td style="font-family:var(--mono)">${r.date||'—'}</td>
+          <td style="font-family:var(--mono);color:var(--blue-700)">₹${Number(r.amt||0).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+          <td style="font-family:var(--mono)">${r.comm||0}%</td>
+          <td style="color:var(--gray-500)">${r.rem||'—'}</td>
+          <td>${badge}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+
+  // Payments
+  const payWrap = document.getElementById('ccBulkPayPreview');
+  const payCount = document.getElementById('ccBulkPayCount');
+  if (_ccBulkPayRows.length === 0) {
+    payWrap.innerHTML = '<p style="color:var(--gray-500);font-size:.8rem;font-style:italic">No payment rows found in Sheet 2.</p>';
+    payCount.textContent = '';
+  } else {
+    const ok=_ccBulkPayRows.filter(r=>!r.err).length;
+    const err=_ccBulkPayRows.filter(r=>r.err).length;
+    payCount.textContent = `— ${_ccBulkPayRows.length} rows · ✅ ${ok} valid · ❌ ${err} error`;
+    payWrap.innerHTML = `<table>
+      <thead><tr><th>#</th><th>Party</th><th>Date</th><th>Amount</th><th>Mode</th><th>Type</th><th>Remarks</th><th>Status</th></tr></thead>
+      <tbody>${_ccBulkPayRows.map((r,i)=>{
+        const cls = r.err ? 'bulk-row-err' : 'bulk-row-ok';
+        const badge = r.err ? `<span class="bulk-badge bulk-err">ERROR</span>` : `<span class="bulk-badge bulk-ok">VALID</span>`;
+        const note = r.err ? `<br><span style="font-size:.68rem;color:var(--red)">${r.err}</span>` : '';
+        const typeLabel = r.ptype==='comm' ? '📊 Commission' : '💳 Txn Payment';
+        return `<tr class="${cls}">
+          <td style="color:var(--gray-500)">${i+1}</td>
+          <td style="font-weight:600">${r.party||'—'}${note}</td>
+          <td style="font-family:var(--mono)">${r.date||'—'}</td>
+          <td style="font-family:var(--mono);color:var(--green)">₹${Number(r.amt||0).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+          <td>${r.mode||'—'}</td>
+          <td style="font-size:.78rem;color:var(--blue-700)">${typeLabel}</td>
+          <td style="color:var(--gray-500)">${r.rem||'—'}</td>
+          <td>${badge}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+}
+
+function importCCBulk() {
+  if (!_isAdmin) { toast('🔐 Admin login required','err'); openLoginFromApp(); return; }
+  let addedT=0, skippedT=0, addedP=0;
+
+  // Import transactions
+  _ccBulkTxnRows.forEach(r => {
+    if (r.err || r.dup) { skippedT++; return; }
+    const commPct = r.comm || (ccCommRates[r.party] ? +ccCommRates[r.party] : 0);
+    ccTxns.push({
+      id: Date.now()+Math.random(),
+      party: r.party,
+      card: r.card,
+      date: r.date,
+      amount: r.amt,
+      rentPct: commPct,
+      remarks: r.rem
+    });
+    if (r.comm && r.party) ccCommRates[r.party] = r.comm;
+    addedT++;
+  });
+
+  // Import payments
+  _ccBulkPayRows.forEach(r => {
+    if (r.err) return;
+    if (r.ptype === 'comm') {
+      ccCommPays.push({ id: Date.now()+Math.random(), party: r.party, date: r.date, amount: r.amt, mode: r.mode, remarks: r.rem });
+    } else {
+      ccTxnPays.push({ id: Date.now()+Math.random(), party: r.party, date: r.date, amount: r.amt, mode: r.mode, remarks: r.rem });
+    }
+    addedP++;
+  });
+
+  // Save
+  saveCC();
+  renderCCDash(); renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
+
+  const rc = document.getElementById('ccBulkResultCard');
+  rc.style.display = 'block';
+  rc.style.cssText = 'display:block;border-radius:10px;padding:14px 16px;background:var(--green-bg);border:1.5px solid var(--green-bd)';
+  let msg = '';
+  if (addedT) msg += addedT+' transaction'+(addedT!==1?'s':'')+' imported';
+  if (skippedT) msg += (msg?' · ':'')+skippedT+' skipped (duplicate/error)';
+  if (addedP) msg += (msg?' · ':'')+addedP+' payment'+(addedP!==1?'s':'')+' recorded';
+  if (!msg) msg = 'Nothing to import';
+  rc.innerHTML = '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.4rem">✅</span>'
+    +'<div><div style="font-weight:800;color:var(--green);font-size:.92rem">'+msg+' successfully!</div>'
+    +'<div style="font-size:.75rem;font-family:var(--mono);color:var(--gray-500);margin-top:2px">All records saved. View details in Dashboard, Ledger or Commission tabs.</div></div></div>';
+
+  _ccBulkTxnRows=[]; _ccBulkPayRows=[];
+  setTimeout(()=>{ renderCCBulkPreview(); document.getElementById('ccBulkPreviewWrap').style.display='none'; }, 2500);
+  toast(msg, 'ok');
+}
+
+function clearCCBulkPreview() {
+  _ccBulkTxnRows=[]; _ccBulkPayRows=[];
+  document.getElementById('ccBulkPreviewWrap').style.display='none';
+  document.getElementById('ccBulkResultCard').style.display='none';
+  document.getElementById('ccBulkFileIn').value='';
 }
 
 function initCCTab() {
