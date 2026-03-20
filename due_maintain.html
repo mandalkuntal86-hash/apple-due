@@ -2824,6 +2824,7 @@ function markPaid(i) {
 
 /* ── EDIT FROM RECEIPT ── */
 function editFromReceipt() {
+  if(!_isAdmin){toast('🔐 Admin login required to edit entries','err');openLoginFromApp();return;}
   const bill  = document.getElementById('rcptBill').value;
   const party = document.getElementById('rcptParty').value;
   if (!bill || !party) { toast('Select a bill first','err'); return; }
@@ -2858,6 +2859,7 @@ function viewReceiptLastAdded() {
 }
 
 function editLastAdded() {
+  if(!_isAdmin){toast('🔐 Admin login required to edit entries','err');openLoginFromApp();return;}
   const id = window._lastAddedId;
   if (!id) { toast('No bill added yet','err'); return; }
   const idx = entries.findIndex(e => String(e.id) === String(id));
@@ -2868,6 +2870,7 @@ function editLastAdded() {
 
 /* ── EDIT BY BILL (from Add Entry form) ── */
 function openEditByBill() {
+  if(!_isAdmin){toast('🔐 Admin login required to edit entries','err');openLoginFromApp();return;}
   const billNo = document.getElementById('fBill').value.trim();
   if (!billNo) { toast('Enter bill number first','err'); return; }
   const idx = entries.findIndex(e => e.bill === billNo);
@@ -2887,6 +2890,7 @@ function checkBillExists() {
 
 /* ── EDIT ── */
 function openEdit(i) {
+  if(!_isAdmin){toast('🔐 Admin login required to edit entries','err');openLoginFromApp();return;}
   editIdx=i; const e=entries[i];
   document.getElementById('eParty').value  = e.party;
   document.getElementById('eBill').value   = e.bill;
