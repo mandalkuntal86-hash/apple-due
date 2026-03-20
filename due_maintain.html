@@ -453,12 +453,12 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 
   /* Tab bar — scrollable */
   .tab-bar{
-    padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;
     scrollbar-width:none;gap:0;flex-wrap:nowrap;
     position:sticky;top:56px;
   }
   .tab-bar::-webkit-scrollbar{display:none;}
-  .tab-btn{padding:12px 12px;font-size:.75rem;white-space:nowrap;flex-shrink:0;}
+  .tab-btn{padding:12px 10px;font-size:.73rem;white-space:nowrap;flex-shrink:0;min-width:0;}
 
   /* Sub-tab bar — scrollable */
   .sub-tab-bar{
@@ -473,8 +473,8 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 
   /* Summary grid — 2 col on mobile */
   .summary-grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
-  .s-value{font-size:1.4rem;}
-  .s-card{padding:14px 14px;}
+  .s-value{font-size:1.25rem;word-break:break-word;}
+  .s-card{padding:12px 12px;}
 
   /* Dash grid — stack */
   .dash-grid{grid-template-columns:1fr;gap:14px;}
@@ -515,8 +515,17 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
   .modal{padding:18px 16px;margin:10px;}
   .overlay{padding:10px;}
 
-  /* Summary cards — CC */
-  #ccdCards{grid-template-columns:1fr 1fr;}
+  /* Date filter bar — stack label above pills on mobile */
+  #tab-dashboard .box .box-body > div:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  #tab-dashboard .box .box-body > div:first-child .pills {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  #dRangeLabel { margin-left: 0 !important; }
 
   /* Pills — scrollable row */
   .pills{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;padding-bottom:4px;}
