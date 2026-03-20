@@ -1438,7 +1438,68 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
   </div>
 </div>
 
-<!-- CLEAR ALL CONFIRM MODAL -->
+<!-- CC TRANSACTION EDIT MODAL -->
+<div class="overlay" id="ccTxnEditOverlay">
+  <div class="modal" style="max-width:520px">
+    <button class="modal-x" onclick="closeCCTxnEdit()">✕</button>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="width:38px;height:38px;background:var(--blue-100);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem">💳</div>
+      <div>
+        <div class="modal-title" style="margin-bottom:0">Edit CC Transaction</div>
+        <div style="font-size:.72rem;color:var(--gray-500);font-family:var(--mono)" id="ccTxnEditRef">—</div>
+      </div>
+    </div>
+    <div style="height:1px;background:var(--blue-100);margin:14px 0"></div>
+    <div class="fg">
+      <div class="f"><label>Party Name *</label><input type="text" id="ccTeParty" placeholder="Party name"></div>
+      <div class="f"><label>Card Last 4 Digits</label><input type="text" id="ccTeCard" placeholder="e.g. 9009" maxlength="4"></div>
+      <div class="f"><label>Transaction Date *</label><input type="date" id="ccTeDate"></div>
+      <div class="f"><label>Amount (₹) *</label><input type="number" id="ccTeAmt" min="0" placeholder="0.00"></div>
+      <div class="f"><label>Commission % *</label><input type="number" id="ccTeComm" min="0" step="0.1" placeholder="1"></div>
+      <div class="f" style="grid-column:1/-1"><label>Remarks</label><input type="text" id="ccTeRem" placeholder="Optional note…"></div>
+    </div>
+    <div style="height:1px;background:var(--blue-100);margin:16px 0"></div>
+    <div class="f-actions">
+      <button class="btn btn-blue" onclick="saveCCTxnEdit()" style="padding:10px 28px">💾 Save Changes</button>
+      <button class="btn btn-outline" onclick="closeCCTxnEdit()">Cancel</button>
+      <button class="btn btn-red btn-sm" onclick="deleteCCTxnFromModal()" style="margin-left:auto">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- CC PAYMENT EDIT MODAL -->
+<div class="overlay" id="ccPayEditOverlay">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-x" onclick="closeCCPayEdit()">✕</button>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="width:38px;height:38px;background:var(--orange-bg);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem">💸</div>
+      <div>
+        <div class="modal-title" style="margin-bottom:0">Edit Payment</div>
+        <div style="font-size:.72rem;color:var(--gray-500);font-family:var(--mono)" id="ccPayEditRef">—</div>
+      </div>
+    </div>
+    <div style="height:1px;background:var(--blue-100);margin:14px 0"></div>
+    <div class="fg">
+      <div class="f"><label>Party Name *</label><input type="text" id="ccPeParty" placeholder="Party name"></div>
+      <div class="f"><label>Payment Date *</label><input type="date" id="ccPeDate"></div>
+      <div class="f"><label>Amount (₹) *</label><input type="number" id="ccPeAmt" min="0" placeholder="0.00"></div>
+      <div class="f"><label>Mode</label>
+        <select id="ccPeMode">
+          <option>Cash</option><option>UPI</option><option>NEFT/RTGS</option><option>Cheque</option><option>Other</option>
+        </select>
+      </div>
+      <div class="f" style="grid-column:1/-1"><label>Remarks</label><input type="text" id="ccPeRem" placeholder="Optional note…"></div>
+    </div>
+    <div style="height:1px;background:var(--blue-100);margin:16px 0"></div>
+    <div class="f-actions">
+      <button class="btn btn-blue" onclick="saveCCPayEdit()" style="padding:10px 28px">💾 Save Changes</button>
+      <button class="btn btn-outline" onclick="closeCCPayEdit()">Cancel</button>
+      <button class="btn btn-red btn-sm" onclick="deleteCCPayFromModal()" style="margin-left:auto">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="overlay" id="clearOverlay">
   <div class="modal" style="max-width:420px;text-align:center">
     <div style="font-size:3rem;margin-bottom:12px">⚠️</div>
@@ -1786,7 +1847,7 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
       <div class="tbl-card">
         <div style="overflow-x:auto">
           <table id="ccCommTable2">
-            <thead><tr><th>#</th><th>Party</th><th>Txn Date</th><th>Card</th><th>Txn Amount</th><th>Comm %</th><th>Commission</th></tr></thead>
+            <thead><tr><th>#</th><th>Party</th><th>Txn Date</th><th>Card</th><th>Txn Amount</th><th>Comm %</th><th>Commission</th><th class="admin-only">Actions</th></tr></thead>
             <tbody id="ccCommBody"></tbody>
             <tfoot id="ccCommFoot"></tfoot>
           </table>
@@ -1815,12 +1876,12 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
         <!-- Transactions -->
         <div class="tbl-card" style="margin-bottom:18px">
           <div class="tbl-top"><div class="tbl-title">💳 Transactions</div></div>
-          <div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Date</th><th>Card</th><th>Amount</th><th>Comm %</th><th>Commission</th><th>Remarks</th></tr></thead><tbody id="ccLedgerTxnBody"></tbody><tfoot id="ccLedgerTxnFoot"></tfoot></table></div>
+          <div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Date</th><th>Card</th><th>Amount</th><th>Comm %</th><th>Commission</th><th>Remarks</th><th class="admin-only">Actions</th></tr></thead><tbody id="ccLedgerTxnBody"></tbody><tfoot id="ccLedgerTxnFoot"></tfoot></table></div>
         </div>
         <!-- Payments -->
         <div class="tbl-card">
           <div class="tbl-top"><div class="tbl-title">💸 Payments Made</div></div>
-          <div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Mode</th><th>Remarks</th></tr></thead><tbody id="ccLedgerPayBody"></tbody><tfoot id="ccLedgerPayFoot"></tfoot></table></div>
+          <div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Mode</th><th>Remarks</th><th class="admin-only">Actions</th></tr></thead><tbody id="ccLedgerPayBody"></tbody><tfoot id="ccLedgerPayFoot"></tfoot></table></div>
         </div>
       </div>
       <div id="ccLedgerEmpty" style="text-align:center;padding:48px;color:var(--gray-500);font-style:italic">Select a party to view their ledger</div>
@@ -4286,6 +4347,119 @@ function deleteCCCommRate(party) {
   }
 }
 
+/* ── CC TRANSACTION EDIT ── */
+let _ccTxnEditId = null;
+function openCCTxnEdit(id) {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  const t = ccTxns.find(x=>String(x.id)===String(id));
+  if(!t){toast('Transaction not found','err');return;}
+  _ccTxnEditId = id;
+  document.getElementById('ccTeParty').value = t.party||'';
+  document.getElementById('ccTeCard').value  = t.card||'';
+  document.getElementById('ccTeDate').value  = t.date||'';
+  document.getElementById('ccTeAmt').value   = t.amount||'';
+  document.getElementById('ccTeComm').value  = t.rentPct||ccGetRate(t.party)||'';
+  document.getElementById('ccTeRem').value   = t.remarks||'';
+  document.getElementById('ccTxnEditRef').textContent = 'ID: '+String(id).slice(-6)+' · '+t.party;
+  document.getElementById('ccTxnEditOverlay').classList.add('show');
+}
+function closeCCTxnEdit() {
+  document.getElementById('ccTxnEditOverlay').classList.remove('show');
+  _ccTxnEditId = null;
+}
+function saveCCTxnEdit() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  const idx = ccTxns.findIndex(x=>String(x.id)===String(_ccTxnEditId));
+  if(idx<0){toast('Transaction not found','err');return;}
+  const party  = document.getElementById('ccTeParty').value.trim();
+  const date   = document.getElementById('ccTeDate').value;
+  const amount = parseFloat(document.getElementById('ccTeAmt').value)||0;
+  const comm   = parseFloat(document.getElementById('ccTeComm').value)||0;
+  if(!party||!date||amount<=0){toast('Fill Party, Date & Amount!','err');return;}
+  ccTxns[idx].party   = party;
+  ccTxns[idx].card    = document.getElementById('ccTeCard').value.trim();
+  ccTxns[idx].date    = date;
+  ccTxns[idx].amount  = amount;
+  ccTxns[idx].rentPct = comm;
+  ccTxns[idx].remarks = document.getElementById('ccTeRem').value.trim();
+  if(comm>0) ccCommRates[party]=comm;
+  saveCC();
+  renderCCDash(); renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
+  closeCCTxnEdit();
+  toast('Transaction updated ✅','ok');
+}
+function deleteCCTxn(id) {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  const t = ccTxns.find(x=>String(x.id)===String(id));
+  if(!t) return;
+  if(confirm('Delete transaction ₹'+Number(t.amount).toLocaleString('en-IN')+' for '+t.party+' on '+t.date+'?')) {
+    ccTxns = ccTxns.filter(x=>String(x.id)!==String(id));
+    saveCC();
+    renderCCDash(); renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
+    toast('Transaction deleted','err');
+  }
+}
+function deleteCCTxnFromModal() {
+  if(_ccTxnEditId) { closeCCTxnEdit(); deleteCCTxn(_ccTxnEditId); }
+}
+
+/* ── CC PAYMENT EDIT ── */
+let _ccPayEditId = null, _ccPayEditType = null;
+function openCCPayEdit(id, type) {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  const arr = type==='comm' ? ccCommPays : ccTxnPays;
+  const p = arr.find(x=>String(x.id)===String(id));
+  if(!p){toast('Payment not found','err');return;}
+  _ccPayEditId = id; _ccPayEditType = type;
+  document.getElementById('ccPeParty').value = p.party||'';
+  document.getElementById('ccPeDate').value  = p.date||'';
+  document.getElementById('ccPeAmt').value   = p.amount||'';
+  document.getElementById('ccPeMode').value  = p.mode||'Cash';
+  document.getElementById('ccPeRem').value   = p.remarks||'';
+  document.getElementById('ccPayEditRef').textContent = (type==='comm'?'Commission':'Txn')+' Payment · '+p.party+' · '+p.date;
+  document.getElementById('ccPayEditOverlay').classList.add('show');
+}
+function closeCCPayEdit() {
+  document.getElementById('ccPayEditOverlay').classList.remove('show');
+  _ccPayEditId = null; _ccPayEditType = null;
+}
+function saveCCPayEdit() {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  const arr = _ccPayEditType==='comm' ? ccCommPays : ccTxnPays;
+  const idx = arr.findIndex(x=>String(x.id)===String(_ccPayEditId));
+  if(idx<0){toast('Payment not found','err');return;}
+  const date   = document.getElementById('ccPeDate').value;
+  const amount = parseFloat(document.getElementById('ccPeAmt').value)||0;
+  if(!date||amount<=0){toast('Fill Date & Amount!','err');return;}
+  arr[idx].party   = document.getElementById('ccPeParty').value.trim();
+  arr[idx].date    = date;
+  arr[idx].amount  = amount;
+  arr[idx].mode    = document.getElementById('ccPeMode').value;
+  arr[idx].remarks = document.getElementById('ccPeRem').value.trim();
+  saveCC();
+  renderCCDash(); renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
+  closeCCPayEdit();
+  toast('Payment updated ✅','ok');
+}
+function deleteCCPay(id, type) {
+  if(!_isAdmin){toast('🔐 Admin login required','err');openLoginFromApp();return;}
+  const arr = type==='comm' ? ccCommPays : ccTxnPays;
+  const p = arr.find(x=>String(x.id)===String(id));
+  if(!p) return;
+  if(confirm('Delete payment ₹'+Number(p.amount).toLocaleString('en-IN')+' for '+p.party+' on '+p.date+'?')) {
+    if(type==='comm') ccCommPays=ccCommPays.filter(x=>String(x.id)!==String(id));
+    else              ccTxnPays =ccTxnPays.filter(x=>String(x.id)!==String(id));
+    saveCC();
+    renderCCDash(); renderCCSummary(); renderCCCommission(); renderCCLedger(); renderCCCommTable();
+    toast('Payment deleted','err');
+  }
+}
+function deleteCCPayFromModal() {
+  if(_ccPayEditId) { closeCCPayEdit(); deleteCCPay(_ccPayEditId, _ccPayEditType); }
+}
+
+
+
 /* ── RECORD PAYMENT ── */
 function refreshCCPayParty() {
   const parties = ccParties();
@@ -4420,6 +4594,10 @@ function renderCCCommission() {
       <td class="mono c-red">${fmt(t.amount)}</td>
       <td style="font-family:var(--mono);color:var(--orange)">${pct}%</td>
       <td class="mono" style="color:var(--orange)">${fmt(comm)}</td>
+      <td class="admin-only"><div class="act-cell">
+        <button class="btn btn-edit btn-sm" onclick="openCCTxnEdit('${t.id}')">✏️</button>
+        <button class="btn btn-red btn-sm" onclick="deleteCCTxn('${t.id}')">🗑️</button>
+      </div></td>
     </tr>`;
   }).join('');
   document.getElementById('ccCommFoot').innerHTML=`<tr>
@@ -4469,6 +4647,10 @@ function renderCCLedger() {
       <td style="font-family:var(--mono);color:var(--orange)">${pct}%</td>
       <td class="mono" style="color:var(--orange)">${fmt(comm)}</td>
       <td style="font-size:.75rem;color:var(--gray-500)">${t.remarks||'—'}</td>
+      <td class="admin-only"><div class="act-cell">
+        <button class="btn btn-edit btn-sm" onclick="openCCTxnEdit('${t.id}')">✏️</button>
+        <button class="btn btn-red btn-sm" onclick="deleteCCTxn('${t.id}')">🗑️</button>
+      </div></td>
     </tr>`;
   }).join('');
   document.getElementById('ccLedgerTxnFoot').innerHTML=`<tr>
@@ -4481,7 +4663,7 @@ function renderCCLedger() {
   let tTP=0;
   const txnPaysSorted=[...s.txnPays].sort((a,b)=>a.date.localeCompare(b.date));
   document.getElementById('ccLedgerPayBody').innerHTML=
-    '<tr style="background:var(--blue-50)"><td colspan="5" style="font-weight:700;color:var(--blue-700);font-size:.75rem;padding:8px 12px">💳 Transaction Payments</td></tr>'+
+    '<tr style="background:var(--blue-50)"><td colspan="6" style="font-weight:700;color:var(--blue-700);font-size:.75rem;padding:8px 12px">💳 Transaction Payments</td></tr>'+
     (txnPaysSorted.map((p,i)=>{
       tTP+=+p.amount;
       return `<tr>
@@ -4490,13 +4672,17 @@ function renderCCLedger() {
         <td class="mono" style="color:var(--blue-600)">${fmt(p.amount)}</td>
         <td style="font-size:.78rem">${p.mode}</td>
         <td style="font-size:.75rem;color:var(--gray-500)">${p.remarks||'—'}</td>
+        <td class="admin-only"><div class="act-cell">
+          <button class="btn btn-edit btn-sm" onclick="openCCPayEdit('${p.id}','txn')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="deleteCCPay('${p.id}','txn')">🗑️</button>
+        </div></td>
       </tr>`;
-    }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);font-style:italic;padding:10px">No txn payments yet</td></tr>');
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);font-style:italic;padding:10px">No txn payments yet</td></tr>');
 
   let tCP=0;
   const commPaysSorted=[...s.commPays].sort((a,b)=>a.date.localeCompare(b.date));
   document.getElementById('ccLedgerPayBody').innerHTML +=
-    '<tr style="background:var(--orange-bg)"><td colspan="5" style="font-weight:700;color:var(--orange);font-size:.75rem;padding:8px 12px">📊 Commission Payments</td></tr>'+
+    '<tr style="background:var(--orange-bg)"><td colspan="6" style="font-weight:700;color:var(--orange);font-size:.75rem;padding:8px 12px">📊 Commission Payments</td></tr>'+
     (commPaysSorted.map((p,i)=>{
       tCP+=+p.amount;
       return `<tr>
@@ -4505,8 +4691,12 @@ function renderCCLedger() {
         <td class="mono c-green">${fmt(p.amount)}</td>
         <td style="font-size:.78rem">${p.mode}</td>
         <td style="font-size:.75rem;color:var(--gray-500)">${p.remarks||'—'}</td>
+        <td class="admin-only"><div class="act-cell">
+          <button class="btn btn-edit btn-sm" onclick="openCCPayEdit('${p.id}','comm')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="deleteCCPay('${p.id}','comm')">🗑️</button>
+        </div></td>
       </tr>`;
-    }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);font-style:italic;padding:10px">No commission payments yet</td></tr>');
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);font-style:italic;padding:10px">No commission payments yet</td></tr>');
 
   document.getElementById('ccLedgerPayFoot').innerHTML=`<tr>
     <td colspan="2" style="text-align:right">Txn Paid / Comm Paid</td>
