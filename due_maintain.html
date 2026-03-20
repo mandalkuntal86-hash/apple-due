@@ -443,22 +443,32 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
 @media(max-width:768px){
 
   /* Header */
-  header{padding:0 14px;height:56px;}
-  .logo-name{font-size:1.05rem;}
+  header{padding:0 10px;height:56px;}
+  .logo-name{font-size:1rem;}
   .logo-sub{display:none;}
   .header-date{display:none;}
-  #authBadgeWrap{gap:5px;}
-  #authBadge{font-size:.62rem;padding:2px 8px;}
-  #logoutBtn{font-size:.62rem;padding:2px 8px;}
+  /* Shrink the header right side items */
+  header > div:last-child{gap:6px;}
+  .conn-indicator{padding:2px 6px;font-size:.62rem;}
+  #connLabel{display:none;}
+  #authBadgeWrap{gap:4px;}
+  #authBadge{font-size:.62rem;padding:2px 7px;}
+  #logoutBtn{font-size:.62rem;padding:2px 6px;}
+  /* Logo SVG — scale down */
+  .logo svg{height:28px;}
 
-  /* Tab bar — scrollable */
+  /* Tab bar — truly scrollable, buttons never stretch */
   .tab-bar{
-    padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    padding:0 4px;overflow-x:auto;-webkit-overflow-scrolling:touch;
     scrollbar-width:none;gap:0;flex-wrap:nowrap;
+    display:flex;width:100%;
     position:sticky;top:56px;
   }
   .tab-bar::-webkit-scrollbar{display:none;}
-  .tab-btn{padding:12px 10px;font-size:.73rem;white-space:nowrap;flex-shrink:0;min-width:0;}
+  .tab-btn{
+    padding:12px 11px;font-size:.74rem;white-space:nowrap;
+    flex:0 0 auto;min-width:max-content;
+  }
 
   /* Sub-tab bar — scrollable */
   .sub-tab-bar{
