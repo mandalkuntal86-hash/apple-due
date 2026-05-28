@@ -747,17 +747,20 @@ hr.d{border:none;border-top:1.5px dashed var(--gray-200);margin:10px 0;}
             <div class="stat-bar-track"><div class="stat-bar-fill" id="barOver" style="background:var(--red);width:0%"></div></div>
           </div>
           <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
-            <div style="background:var(--green-bg);border:1px solid var(--green-bd);border-radius:9px;padding:12px 8px">
+            <div onclick="goToTracker('paid')" title="Click to view Paid bills" style="background:var(--green-bg);border:1px solid var(--green-bd);border-radius:9px;padding:12px 8px;cursor:pointer;transition:box-shadow .18s,transform .15s" onmouseover="this.style.boxShadow='0 4px 14px rgba(22,163,74,.25)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
               <div style="font-size:1.3rem;font-weight:800;color:var(--green)" id="cntPaid">0</div>
               <div style="font-size:.68rem;color:var(--gray-500);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-top:3px">Paid</div>
+              <div style="font-size:.6rem;color:var(--green);font-family:var(--mono);margin-top:4px;opacity:.7">↗ View Bills</div>
             </div>
-            <div style="background:var(--orange-bg);border:1px solid var(--orange-bd);border-radius:9px;padding:12px 8px">
+            <div onclick="goToTracker('pending')" title="Click to view Pending bills" style="background:var(--orange-bg);border:1px solid var(--orange-bd);border-radius:9px;padding:12px 8px;cursor:pointer;transition:box-shadow .18s,transform .15s" onmouseover="this.style.boxShadow='0 4px 14px rgba(217,119,6,.25)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
               <div style="font-size:1.3rem;font-weight:800;color:var(--orange)" id="cntPend">0</div>
               <div style="font-size:.68rem;color:var(--gray-500);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-top:3px">Pending</div>
+              <div style="font-size:.6rem;color:var(--orange);font-family:var(--mono);margin-top:4px;opacity:.7">↗ View Bills</div>
             </div>
-            <div style="background:var(--red-bg);border:1px solid var(--red-bd);border-radius:9px;padding:12px 8px">
+            <div onclick="goToTracker('overdue')" title="Click to view Overdue bills" style="background:var(--red-bg);border:1px solid var(--red-bd);border-radius:9px;padding:12px 8px;cursor:pointer;transition:box-shadow .18s,transform .15s" onmouseover="this.style.boxShadow='0 4px 14px rgba(220,38,38,.25)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
               <div style="font-size:1.3rem;font-weight:800;color:var(--red)" id="cntOver">0</div>
               <div style="font-size:.68rem;color:var(--gray-500);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-top:3px">Overdue</div>
+              <div style="font-size:.6rem;color:var(--red);font-family:var(--mono);margin-top:4px;opacity:.7">↗ View Bills</div>
             </div>
           </div>
         </div>
@@ -3169,7 +3172,7 @@ function printReceipt() {
 let _trackerStatus = 'all';
 
 function ft(type, btn) {
-  document.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#sub-tracker .pill').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   _trackerStatus = type;
   renderTracker();
@@ -3220,6 +3223,7 @@ function renderTracker() {
   else if(type==='warn') list=list.filter(e=>{const r=e.dueDays-diff(e.date);return r>=0&&r<=15&&(+e.amount-+e.paid)>0;});
   else if(type==='ok')   list=list.filter(e=>{const r=e.dueDays-diff(e.date);return r>15&&(+e.amount-+e.paid)>0;});
   else if(type==='paid') list=list.filter(e=>(+e.amount-+e.paid)<=0);
+  else if(type==='__pending_all__') list=list.filter(e=>{ const b=+e.amount-+e.paid; return b>0 && diff(e.date)<=e.dueDays; });
 
   // Advanced filters
   if (srch)    list=list.filter(e=>e.party.toLowerCase().includes(srch)||e.bill.toLowerCase().includes(srch));
@@ -5197,6 +5201,41 @@ function initCCTab() {
   if (dashPanel) dashPanel.classList.add('active');
   if (dashBtn)   dashBtn.classList.add('active');
   renderCCDash();
+}
+
+/* ── DASHBOARD CARD → TRACKER NAVIGATE ── */
+function goToTracker(type) {
+  // 1. Switch to the "Resale Entry & Report" main tab
+  const othersBtn = document.getElementById('othersTabBtn');
+  switchTab('others', othersBtn);
+
+  // 2. Switch to the tracker sub-panel
+  const trackerBtn = [...document.querySelectorAll('#tab-others .sub-tab')]
+    .find(b => b.textContent.includes('Due Tracker'));
+  if (trackerBtn) switchSub('tracker', trackerBtn);
+
+  // 3. Map type to tracker status
+  const statusMap = { paid: 'paid', pending: '__pending_all__', overdue: 'danger' };
+  _trackerStatus = statusMap[type] || 'all';
+
+  // 4. Highlight the right pill
+  document.querySelectorAll('#sub-tracker .pill').forEach(b => b.classList.remove('active'));
+  const pills = document.querySelectorAll('#sub-tracker .pill');
+  pills.forEach(p => {
+    const txt = p.textContent.trim();
+    if (type === 'paid'    && txt.includes('Paid'))    p.classList.add('active');
+    if (type === 'overdue' && txt.includes('Overdue')) p.classList.add('active');
+    if (type === 'pending' && txt === 'All')           p.classList.add('active');
+  });
+
+  // 5. Re-render tracker with the new status
+  renderTracker();
+
+  // 6. Scroll to tracker
+  setTimeout(() => {
+    const el = document.getElementById('sub-tracker');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 120);
 }
 
 /* ── INIT ── */
